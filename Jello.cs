@@ -17,11 +17,9 @@ public class JelloMenuUI : MonoBehaviour
 {
     private bool menuOpen = false;
 
-    private Rect window = new Rect(250, 150, 420, 280);
-
-    private GUIStyle titleStyle;
-    private GUIStyle buttonStyle;
-    private GUIStyle labelStyle;
+    private GUIStyle? titleStyle;
+    private GUIStyle? buttonStyle;
+    private GUIStyle? labelStyle;
 
     private void Update()
     {
@@ -38,12 +36,45 @@ public class JelloMenuUI : MonoBehaviour
 
         CreateStyles();
 
-        window = GUI.Window(
-            12345,
-            window,
-            DrawWindow,
-            "Jello"
+        // Menu background
+        GUI.Box(
+            new Rect(250, 150, 420, 280),
+            ""
         );
+
+        // Title
+        GUI.Label(
+            new Rect(270, 175, 380, 40),
+            "JELLO",
+            titleStyle
+        );
+
+        // Status
+        GUI.Label(
+            new Rect(270, 215, 380, 25),
+            "QOL Menu Loaded",
+            labelStyle
+        );
+
+        // Test button
+        if (GUI.Button(
+            new Rect(290, 255, 340, 40),
+            "Test Button",
+            buttonStyle
+        ))
+        {
+            Debug.Log("Smart Looking At Logs");
+        }
+
+        // Close button
+        if (GUI.Button(
+            new Rect(290, 310, 340, 40),
+            "Close Menu",
+            buttonStyle
+        ))
+        {
+            menuOpen = false;
+        }
     }
 
     private void CreateStyles()
@@ -68,47 +99,5 @@ public class JelloMenuUI : MonoBehaviour
         {
             fontSize = 14
         };
-    }
-
-    private void DrawWindow(int id)
-    {
-        // Title
-        GUI.Label(
-            new Rect(20, 35, 380, 40),
-            "JELLO",
-            titleStyle
-        );
-
-        // Status
-        GUI.Label(
-            new Rect(20, 75, 380, 25),
-            "QOL Menu Loaded",
-            labelStyle
-        );
-
-        // Test button
-        if (GUI.Button(
-            new Rect(40, 115, 340, 40),
-            "Test Button",
-            buttonStyle
-        ))
-        {
-            Debug.Log("Smart Looking At Logs");
-        }
-
-        // Close button
-        if (GUI.Button(
-            new Rect(40, 170, 340, 40),
-            "Close Menu",
-            buttonStyle
-        ))
-        {
-            menuOpen = false;
-        }
-
-        // Drag window from the top
-        GUI.DragWindow(
-            new Rect(0, 0, window.width, 30)
-        );
     }
 }
