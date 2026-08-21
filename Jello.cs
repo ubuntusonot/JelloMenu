@@ -15,10 +15,6 @@ public class QOLMenuPlugin : BasePlugin
 
 public class JelloMenuUI : MonoBehaviour
 {
-    // =========================
-    // MENU
-    // =========================
-
     private bool menuOpen = false;
     private bool waitingForKey = false;
 
@@ -34,6 +30,21 @@ public class JelloMenuUI : MonoBehaviour
     private string statusText = "Jello Loaded";
 
     // =========================
+    // TABS
+    // =========================
+
+    private int currentTab = 0;
+
+    private readonly string[] tabs =
+    {
+        "HUD",
+        "UI",
+        "Keybinds",
+        "Misc",
+        "About"
+    };
+
+    // =========================
     // HUD
     // =========================
 
@@ -42,16 +53,14 @@ public class JelloMenuUI : MonoBehaviour
     private bool showClock = true;
     private bool showRuntime = false;
     private bool showResolution = false;
-
     private bool hudEditMode = false;
 
     // =========================
-    // UI SETTINGS
+    // UI
     // =========================
 
     private float menuOpacity = 1.0f;
     private float uiScale = 1.0f;
-
     private int theme = 0;
 
     // =========================
@@ -86,10 +95,11 @@ public class JelloMenuUI : MonoBehaviour
 
     private void Start()
     {
-        string savedKey = PlayerPrefs.GetString(
-            "Jello_MenuKey",
-            "Delete"
-        );
+        string savedKey =
+            PlayerPrefs.GetString(
+                "Jello_MenuKey",
+                "Delete"
+            );
 
         if (Enum.TryParse(
             savedKey,
@@ -288,11 +298,21 @@ public class JelloMenuUI : MonoBehaviour
     }
 
     // =========================
-    // MENU
+    // MAIN MENU
     // =========================
 
     private void DrawMenu(int id)
     {
+        GUILayout.BeginHorizontal();
+
+        // =========================
+        // LEFT TAB BAR
+        // =========================
+
+        GUILayout.BeginVertical(
+            GUILayout.Width(110)
+        );
+
         GUILayout.Space(10);
 
         GUILayout.Label(
@@ -300,21 +320,106 @@ public class JelloMenuUI : MonoBehaviour
             titleStyle
         );
 
-        GUILayout.Label(
-            statusText,
-            labelStyle
+        GUILayout.Space(10);
+
+        for (int i = 0; i < tabs.Length; i++)
+        {
+            GUI.color =
+                currentTab == i
+                    ? new Color(
+                        0.3f,
+                        1f,
+                        0.5f
+                    )
+                    : Color.white;
+
+            if (GUILayout.Button(
+                tabs[i],
+                GUILayout.Height(38)
+            ))
+            {
+                currentTab = i;
+                waitingForKey = false;
+            }
+        }
+
+        GUI.color = Color.white;
+
+        GUILayout.FlexibleSpace();
+
+        if (GUILayout.Button(
+            "Close",
+            GUILayout.Height(32)
+        ))
+        {
+            menuOpen = false;
+            waitingForKey = false;
+        }
+
+        GUILayout.Space(10);
+
+        GUILayout.EndVertical();
+
+        // =========================
+        // RIGHT CONTENT
+        // =========================
+
+        GUILayout.BeginVertical();
+
+        GUILayout.Space(10);
+
+        switch (currentTab)
+        {
+            case 0:
+                DrawHUDTab();
+                break;
+
+            case 1:
+                DrawUITab();
+                break;
+
+            case 2:
+                DrawKeybindTab();
+                break;
+
+            case 3:
+                DrawMiscTab();
+                break;
+
+            case 4:
+                DrawAboutTab();
+                break;
+        }
+
+        GUILayout.FlexibleSpace();
+
+        GUILayout.EndVertical();
+
+        GUILayout.EndHorizontal();
+
+        // Drag window.
+        GUI.DragWindow(
+            new Rect(
+                0,
+                0,
+                window.width,
+                45
+            )
         );
+    }
 
-        GUILayout.Space(8);
+    // =========================
+    // HUD TAB
+    // =========================
 
-        // -------------------------
-        // HUD
-        // -------------------------
-
+    private void DrawHUDTab()
+    {
         GUILayout.Label(
             "HUD",
             titleStyle
         );
+
+        GUILayout.Space(10);
 
         hudEnabled = GUILayout.Toggle(
             hudEnabled,
@@ -346,31 +451,46 @@ public class JelloMenuUI : MonoBehaviour
             "Edit HUD"
         );
 
-        GUILayout.Space(8);
-
-        // -------------------------
-        // FPS
-        // -------------------------
+        GUILayout.Space(10);
 
         GUILayout.Label(
             $"FPS Warning: {fpsWarning:0}",
             labelStyle
         );
 
-        fpsWarning = GUILayout.HorizontalSlider(
-            fpsWarning,
-            10f,
-            120f
-        );
+        fpsWarning =
+            GUILayout.HorizontalSlider(
+                fpsWarning,
+                10f,
+                120f
+            );
 
-        // -------------------------
-        // UI
-        // -------------------------
+        GUILayout.Space(10);
 
+        if (GUILayout.Button(
+            "Reset HUD",
+            GUILayout.Height(35)
+        ))
+        {
+            ResetHUD();
+
+            statusText =
+                "HUD reset.";
+        }
+    }
+
+    // =========================
+    // UI TAB
+    // =========================
+
+    private void DrawUITab()
+    {
         GUILayout.Label(
             "UI",
             titleStyle
         );
+
+        GUILayout.Space(10);
 
         GUILayout.Label(
             $"Menu Opacity: {menuOpacity:0.00}",
@@ -396,18 +516,11 @@ public class JelloMenuUI : MonoBehaviour
                 1.5f
             );
 
-        // -------------------------
-        // THEME
-        // -------------------------
-
-        GUILayout.Label(
-            "Theme",
-            titleStyle
-        );
+        GUILayout.Space(10);
 
         if (GUILayout.Button(
             "Change Theme",
-            GUILayout.Height(32)
+            GUILayout.Height(35)
         ))
         {
             theme++;
@@ -421,23 +534,50 @@ public class JelloMenuUI : MonoBehaviour
                 "Theme changed.";
         }
 
-        // -------------------------
-        // KEYBIND
-        // -------------------------
+        GUILayout.Space(10);
+
+        if (GUILayout.Button(
+            "Reset UI",
+            GUILayout.Height(35)
+        ))
+        {
+            menuOpacity = 1.0f;
+            uiScale = 1.0f;
+
+            statusText =
+                "UI reset.";
+        }
+    }
+
+    // =========================
+    // KEYBIND TAB
+    // =========================
+
+    private void DrawKeybindTab()
+    {
+        GUILayout.Label(
+            "KEYBINDS",
+            titleStyle
+        );
+
+        GUILayout.Space(10);
 
         GUILayout.Label(
             "Menu Key: " + menuKey,
             labelStyle
         );
 
+        GUILayout.Space(10);
+
         if (!waitingForKey)
         {
             if (GUILayout.Button(
                 "Change Keybind",
-                GUILayout.Height(35)
+                GUILayout.Height(40)
             ))
             {
                 waitingForKey = true;
+
                 statusText =
                     "Press a key...";
             }
@@ -478,9 +618,11 @@ public class JelloMenuUI : MonoBehaviour
             }
         }
 
+        GUILayout.Space(10);
+
         if (GUILayout.Button(
             "Reset Keybind",
-            GUILayout.Height(30)
+            GUILayout.Height(35)
         ))
         {
             menuKey = KeyCode.Delete;
@@ -497,16 +639,31 @@ public class JelloMenuUI : MonoBehaviour
             statusText =
                 "Keybind reset to Delete.";
         }
+    }
 
-        GUILayout.Space(8);
+    // =========================
+    // MISC TAB
+    // =========================
 
-        // -------------------------
-        // BUTTONS
-        // -------------------------
+    private void DrawMiscTab()
+    {
+        GUILayout.Label(
+            "MISC",
+            titleStyle
+        );
+
+        GUILayout.Space(10);
+
+        GUILayout.Label(
+            statusText,
+            labelStyle
+        );
+
+        GUILayout.Space(10);
 
         if (GUILayout.Button(
             "Test Button",
-            GUILayout.Height(35)
+            GUILayout.Height(40)
         ))
         {
             statusText =
@@ -516,47 +673,43 @@ public class JelloMenuUI : MonoBehaviour
                 "[Jello] Test Button Works!"
             );
         }
+    }
 
-        if (GUILayout.Button(
-            "Reset HUD",
-            GUILayout.Height(30)
-        ))
-        {
-            ResetHUD();
+    // =========================
+    // ABOUT TAB
+    // =========================
 
-            statusText =
-                "HUD reset.";
-        }
+    private void DrawAboutTab()
+    {
+        GUILayout.Label(
+            "ABOUT",
+            titleStyle
+        );
 
-        if (GUILayout.Button(
-            "Reset UI",
-            GUILayout.Height(30)
-        ))
-        {
-            menuOpacity = 1.0f;
-            uiScale = 1.0f;
+        GUILayout.Space(15);
 
-            statusText =
-                "UI reset.";
-        }
+        GUILayout.Label(
+            "Jello",
+            labelStyle
+        );
 
-        if (GUILayout.Button(
-            "Close",
-            GUILayout.Height(30)
-        ))
-        {
-            menuOpen = false;
-            waitingForKey = false;
-        }
+        GUILayout.Label(
+            "Version 1.0.0",
+            labelStyle
+        );
 
-        // Drag window.
-        GUI.DragWindow(
-            new Rect(
-                0,
-                0,
-                window.width,
-                55
-            )
+        GUILayout.Space(10);
+
+        GUILayout.Label(
+            "A QOL menu for Among Us.",
+            labelStyle
+        );
+
+        GUILayout.Space(15);
+
+        GUILayout.Label(
+            "Status: " + statusText,
+            labelStyle
         );
     }
 
@@ -567,14 +720,10 @@ public class JelloMenuUI : MonoBehaviour
     private Color GetFPSColor()
     {
         if (fps >= fpsWarning)
-        {
             return Color.green;
-        }
 
         if (fps >= fpsWarning * 0.66f)
-        {
             return Color.yellow;
-        }
 
         return Color.red;
     }
@@ -585,33 +734,17 @@ public class JelloMenuUI : MonoBehaviour
 
     private void ResetHUD()
     {
-        fpsRect = new Rect(
-            15,
-            15,
-            180,
-            30
-        );
+        fpsRect =
+            new Rect(15, 15, 180, 30);
 
-        clockRect = new Rect(
-            15,
-            45,
-            180,
-            30
-        );
+        clockRect =
+            new Rect(15, 45, 180, 30);
 
-        runtimeRect = new Rect(
-            15,
-            75,
-            220,
-            30
-        );
+        runtimeRect =
+            new Rect(15, 75, 220, 30);
 
-        resolutionRect = new Rect(
-            15,
-            105,
-            250,
-            30
-        );
+        resolutionRect =
+            new Rect(15, 105, 250, 30);
     }
 
     // =========================
@@ -629,7 +762,6 @@ public class JelloMenuUI : MonoBehaviour
 
         if (theme == 0)
         {
-            // Default
             titleStyle.normal.textColor =
                 Color.white;
 
@@ -641,7 +773,6 @@ public class JelloMenuUI : MonoBehaviour
         }
         else if (theme == 1)
         {
-            // Jello Green
             titleStyle.normal.textColor =
                 new Color(
                     0.3f,
@@ -665,7 +796,6 @@ public class JelloMenuUI : MonoBehaviour
         }
         else
         {
-            // Cyan
             titleStyle.normal.textColor =
                 Color.cyan;
 
@@ -695,7 +825,8 @@ public class JelloMenuUI : MonoBehaviour
         )
         {
             fontSize = 20,
-            fontStyle = FontStyle.Bold,
+            fontStyle =
+                FontStyle.Bold,
             alignment =
                 TextAnchor.MiddleCenter
         };
@@ -714,7 +845,8 @@ public class JelloMenuUI : MonoBehaviour
         )
         {
             fontSize = 16,
-            fontStyle = FontStyle.Bold
+            fontStyle =
+                FontStyle.Bold
         };
 
         buttonStyle = new GUIStyle(
