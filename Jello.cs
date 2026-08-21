@@ -29,11 +29,11 @@ public class JelloMenuUI : MonoBehaviour
         // F4 keybind
         if (Event.current != null &&
             Event.current.type == EventType.KeyDown &&
-            Event.current.keyCode == KeyCode.F4)
+            Event.current.keyCode == KeyCode.Delete)
         {
             menuOpen = !menuOpen;
 
-            Debug.Log("[Jello] F4 pressed! Menu = " + menuOpen);
+            Debug.Log("[Jello] Keycode pressed! Menu = " + menuOpen);
 
             Event.current.Use();
         }
