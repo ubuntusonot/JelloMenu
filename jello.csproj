@@ -13,6 +13,10 @@
       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/core/BepInEx.Core.dll</HintPath>
     </Reference>
 
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/UnityEngine.InputLegacyModule.dll</HintPath>
+    </Reference>
+
     <Reference Include="UnityEngine.TextRenderingModule">
       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
