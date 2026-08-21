@@ -8,7 +8,6 @@ public class QOLMenuPlugin : BasePlugin
     public override void Load()
     {
         Log.LogInfo("Do You Even Read The Logs?");
-
         AddComponent<JelloMenuUI>();
     }
 }
@@ -23,39 +22,12 @@ public class JelloMenuUI : MonoBehaviour
 
     private Rect window = new Rect(250, 150, 420, 280);
 
-    private bool dragging;
-    private Vector2 dragOffset;
+    private string statusText = "QOL Menu Loaded";
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.F4))
             menuOpen = !menuOpen;
-
-        if (!menuOpen)
-            return;
-
-        Vector2 mouse = Event.current != null
-            ? Event.current.mousePosition
-            : Vector2.zero;
-
-        // Start dragging when clicking the title area
-        if (Input.GetMouseButtonDown(0) &&
-            window.Contains(mouse) &&
-            mouse.y >= window.y &&
-            mouse.y <= window.y + 40)
-        {
-            dragging = true;
-            dragOffset = mouse - new Vector2(window.x, window.y);
-        }
-
-        if (Input.GetMouseButtonUp(0))
-            dragging = false;
-
-        if (dragging && Input.GetMouseButton(0))
-        {
-            window.x = mouse.x - dragOffset.x;
-            window.y = mouse.y - dragOffset.y;
-        }
     }
 
     private void OnGUI()
@@ -75,17 +47,17 @@ public class JelloMenuUI : MonoBehaviour
 
         GUI.Label(
             new Rect(window.x + 20, window.y + 60, 380, 25),
-            "QOL Menu Loaded",
+            statusText,
             labelStyle
         );
 
         if (GUI.Button(
             new Rect(window.x + 40, window.y + 105, 340, 40),
-            "Test Button",
+            "Send Hello!",
             buttonStyle
         ))
         {
-            Debug.Log("Smart Looking At Logs");
+            SendHello();
         }
 
         if (GUI.Button(
@@ -95,6 +67,29 @@ public class JelloMenuUI : MonoBehaviour
         ))
         {
             menuOpen = false;
+        }
+    }
+
+    private void SendHello()
+    {
+        if (PlayerControl.LocalPlayer == null)
+        {
+            statusText = "No local player!";
+            Debug.Log("[Jello] LocalPlayer is null.");
+            return;
+        }
+
+        bool sent = PlayerControl.LocalPlayer.RpcSendChat("Hello!");
+
+        if (sent)
+        {
+            statusText = "Sent: Hello!";
+            Debug.Log("[Jello] Sent Hello!");
+        }
+        else
+        {
+            statusText = "Chat failed.";
+            Debug.Log("[Jello] RpcSendChat returned false.");
         }
     }
 
