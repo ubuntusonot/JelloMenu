@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Local Among Us/BepInEx assemblies
+BepInEx/
