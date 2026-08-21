@@ -16,6 +16,10 @@
       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/UnityEngine.CoreModule.dll</HintPath>
     </Reference>
 
+    <Reference Include="Il2Cppmscorlib">
+      <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/Il2Cppmscorlib.dll</HintPath>
+    </Reference>
+
     <Reference Include="UnityEngine.IMGUIModule">
       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
