@@ -98,7 +98,7 @@ public class JelloMenuUI : MonoBehaviour
         window = GUI.Window(
             12345,
             window,
-            DrawMenu,
+            (GUI.WindowFunction)((id) => DrawMenu(id)),
             "Jello"
         );
 
