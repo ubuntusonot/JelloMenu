@@ -16,10 +16,6 @@ public class QOLMenuPlugin : BasePlugin
 
 public class JelloMenuUI : MonoBehaviour
 {
-    // =========================
-    // MENU
-    // =========================
-
     private bool menuOpen = false;
     private bool waitingForKey = false;
 
@@ -29,6 +25,7 @@ public class JelloMenuUI : MonoBehaviour
         new Rect(250, 150, 500, 520);
 
     private int currentTab = 0;
+    private int previousTab = 0;
 
     private readonly string[] tabs =
     {
@@ -51,6 +48,21 @@ public class JelloMenuUI : MonoBehaviour
         "Jello Loaded";
 
     // =========================
+    // ANIMATION
+    // =========================
+
+    private bool animationsEnabled = true;
+
+    private float animationSpeed = 8f;
+
+    private float menuAnimation = 0f;
+    private float tabAnimation = 1f;
+
+    private float targetMenuAnimation = 0f;
+
+    private float hoverAnimation = 0f;
+
+    // =========================
     // UI
     // =========================
 
@@ -61,8 +73,6 @@ public class JelloMenuUI : MonoBehaviour
         new Color(0.05f, 0.05f, 0.07f, 1f);
 
     private float backgroundTransparency = 0.15f;
-
-    private int theme = 0;
 
     // =========================
     // HUD
@@ -152,6 +162,7 @@ public class JelloMenuUI : MonoBehaviour
 
     private void Update()
     {
+        // FPS
         fpsFrames++;
         fpsTimer += Time.unscaledDeltaTime;
 
@@ -162,6 +173,39 @@ public class JelloMenuUI : MonoBehaviour
             fpsFrames = 0;
             fpsTimer = 0f;
         }
+
+        // =========================
+        // MENU ANIMATION
+        // =========================
+
+        targetMenuAnimation =
+            menuOpen ? 1f : 0f;
+
+        if (!animationsEnabled)
+        {
+            menuAnimation =
+                targetMenuAnimation;
+
+            tabAnimation = 1f;
+        }
+        else
+        {
+            menuAnimation =
+                Mathf.MoveTowards(
+                    menuAnimation,
+                    targetMenuAnimation,
+                    Time.unscaledDeltaTime *
+                    animationSpeed
+                );
+
+            tabAnimation =
+                Mathf.MoveTowards(
+                    tabAnimation,
+                    1f,
+                    Time.unscaledDeltaTime *
+                    animationSpeed * 1.5f
+                );
+        }
     }
 
     // =========================
@@ -170,6 +214,7 @@ public class JelloMenuUI : MonoBehaviour
 
     private void OnGUI()
     {
+        // Menu key
         if (!waitingForKey &&
             Event.current != null &&
             Event.current.type == EventType.KeyDown &&
@@ -187,21 +232,73 @@ public class JelloMenuUI : MonoBehaviour
         if (playersOverlay)
             DrawPlayersOverlay();
 
-        if (!menuOpen)
+        // Allow closing animation to finish.
+        if (menuAnimation <= 0.001f)
             return;
 
-        Color oldColor = GUI.color;
-        Matrix4x4 oldMatrix = GUI.matrix;
+        DrawAnimatedMenu();
+    }
 
-        GUI.matrix = Matrix4x4.TRS(
-            Vector3.zero,
-            Quaternion.identity,
-            new Vector3(
-                uiScale,
-                uiScale,
-                1f
-            )
-        );
+    // =========================
+    // ANIMATED MENU
+    // =========================
+
+    private void DrawAnimatedMenu()
+    {
+        Color oldColor =
+            GUI.color;
+
+        Matrix4x4 oldMatrix =
+            GUI.matrix;
+
+        float eased =
+            EaseOutCubic(
+                menuAnimation
+            );
+
+        // Fade
+        float alpha =
+            eased * menuOpacity;
+
+        GUI.color =
+            new Color(
+                1f,
+                1f,
+                1f,
+                alpha
+            );
+
+        // Scale around window center.
+        float scale =
+            Mathf.Lerp(
+                0.90f,
+                1f,
+                eased
+            ) * uiScale;
+
+        Vector2 center =
+            new Vector2(
+                window.x +
+                window.width / 2f,
+                window.y +
+                window.height / 2f
+            );
+
+        GUI.matrix =
+            Matrix4x4.TRS(
+                center,
+                Quaternion.identity,
+                new Vector3(
+                    scale,
+                    scale,
+                    1f
+                )
+            ) *
+            Matrix4x4.TRS(
+                -center,
+                Quaternion.identity,
+                Vector3.one
+            );
 
         window = GUI.Window(
             12345,
@@ -212,8 +309,11 @@ public class JelloMenuUI : MonoBehaviour
             "Jello"
         );
 
-        GUI.matrix = oldMatrix;
-        GUI.color = oldColor;
+        GUI.matrix =
+            oldMatrix;
+
+        GUI.color =
+            oldColor;
     }
 
     // =========================
@@ -245,26 +345,96 @@ public class JelloMenuUI : MonoBehaviour
 
         for (int i = 0; i < tabs.Length; i++)
         {
-            GUI.color =
-                currentTab == i
-                    ? new Color(
-                        0.3f,
-                        1f,
-                        0.5f
-                    )
-                    : Color.white;
+            bool selected =
+                currentTab == i;
 
-            if (GUILayout.Button(
-                tabs[i],
-                GUILayout.Height(36)
+            Rect buttonRect =
+                GUILayoutUtility.GetRect(
+                    new GUIContent(
+                        tabs[i]
+                    ),
+                    GUI.skin.button,
+                    GUILayout.Height(36)
+                );
+
+            // Hover animation
+            bool hovered =
+                buttonRect.Contains(
+                    Event.current.mousePosition
+                );
+
+            if (hovered)
+            {
+                hoverAnimation =
+                    Mathf.MoveTowards(
+                        hoverAnimation,
+                        1f,
+                        Time.unscaledDeltaTime *
+                        animationSpeed
+                    );
+            }
+            else
+            {
+                hoverAnimation =
+                    Mathf.MoveTowards(
+                        hoverAnimation,
+                        0f,
+                        Time.unscaledDeltaTime *
+                        animationSpeed
+                    );
+            }
+
+            Color oldColor =
+                GUI.color;
+
+            if (selected)
+            {
+                GUI.color =
+                    Color.Lerp(
+                        new Color(
+                            0.3f,
+                            0.8f,
+                            0.4f
+                        ),
+                        new Color(
+                            0.3f,
+                            1f,
+                            0.5f
+                        ),
+                        hoverAnimation
+                    );
+            }
+            else if (hovered)
+            {
+                GUI.color =
+                    new Color(
+                        0.75f,
+                        1f,
+                        0.8f
+                    );
+            }
+
+            if (GUI.Button(
+                buttonRect,
+                tabs[i]
             ))
             {
-                currentTab = i;
-                waitingForKey = false;
-            }
-        }
+                if (currentTab != i)
+                {
+                    previousTab =
+                        currentTab;
 
-        GUI.color = Color.white;
+                    currentTab = i;
+
+                    tabAnimation = 0f;
+
+                    waitingForKey = false;
+                }
+            }
+
+            GUI.color =
+                oldColor;
+        }
 
         GUILayout.FlexibleSpace();
 
@@ -288,6 +458,25 @@ public class JelloMenuUI : MonoBehaviour
         GUILayout.BeginVertical();
 
         GUILayout.Space(10);
+
+        // Tab transition
+        float tabAlpha =
+            animationsEnabled
+                ? EaseOutCubic(
+                    tabAnimation
+                )
+                : 1f;
+
+        Color oldGUI =
+            GUI.color;
+
+        GUI.color =
+            new Color(
+                1f,
+                1f,
+                1f,
+                tabAlpha
+            );
 
         switch (currentTab)
         {
@@ -324,6 +513,9 @@ public class JelloMenuUI : MonoBehaviour
                 break;
         }
 
+        GUI.color =
+            oldGUI;
+
         GUILayout.FlexibleSpace();
 
         GUILayout.EndVertical();
@@ -338,6 +530,154 @@ public class JelloMenuUI : MonoBehaviour
                 45
             )
         );
+    }
+
+    // =========================
+    // UI TAB
+    // =========================
+
+    private void DrawUITab()
+    {
+        GUILayout.Label(
+            "UI",
+            titleStyle
+        );
+
+        GUILayout.Space(10);
+
+        // =========================
+        // ANIMATIONS
+        // =========================
+
+        GUILayout.BeginVertical(
+            GUI.skin.box
+        );
+
+        GUILayout.Label(
+            "Animations",
+            labelStyle
+        );
+
+        animationsEnabled =
+            GUILayout.Toggle(
+                animationsEnabled,
+                "Enable Animations"
+            );
+
+        GUILayout.Label(
+            $"Animation Speed: {animationSpeed:0.0}",
+            labelStyle
+        );
+
+        animationSpeed =
+            GUILayout.HorizontalSlider(
+                animationSpeed,
+                2f,
+                20f
+            );
+
+        GUILayout.EndVertical();
+
+        GUILayout.Space(10);
+
+        // =========================
+        // OPACITY
+        // =========================
+
+        GUILayout.Label(
+            $"Menu Opacity: {menuOpacity:0.00}",
+            labelStyle
+        );
+
+        menuOpacity =
+            GUILayout.HorizontalSlider(
+                menuOpacity,
+                0f,
+                1f
+            );
+
+        GUILayout.Label(
+            $"Background Transparency: {backgroundTransparency:0.00}",
+            labelStyle
+        );
+
+        backgroundTransparency =
+            GUILayout.HorizontalSlider(
+                backgroundTransparency,
+                0f,
+                1f
+            );
+
+        GUILayout.Label(
+            "0 = opaque, 1 = invisible",
+            labelStyle
+        );
+
+        GUILayout.Space(8);
+
+        // =========================
+        // SCALE
+        // =========================
+
+        GUILayout.Label(
+            $"UI Scale: {uiScale:0.00}",
+            labelStyle
+        );
+
+        uiScale =
+            GUILayout.HorizontalSlider(
+                uiScale,
+                0.75f,
+                1.5f
+            );
+
+        GUILayout.Space(10);
+
+        if (GUILayout.Button(
+            "Black Background",
+            GUILayout.Height(30)
+        ))
+        {
+            backgroundColor =
+                Color.black;
+        }
+
+        if (GUILayout.Button(
+            "Jello Green",
+            GUILayout.Height(30)
+        ))
+        {
+            backgroundColor =
+                new Color(
+                    0.05f,
+                    0.5f,
+                    0.2f,
+                    1f
+                );
+        }
+
+        if (GUILayout.Button(
+            "Cyan",
+            GUILayout.Height(30)
+        ))
+        {
+            backgroundColor =
+                Color.cyan;
+        }
+
+        if (GUILayout.Button(
+            "Purple",
+            GUILayout.Height(30)
+        ))
+        {
+            backgroundColor =
+                new Color(
+                    0.45f,
+                    0.1f,
+                    0.7f,
+                    1f
+                );
+        }
     }
 
     // =========================
@@ -418,7 +758,7 @@ public class JelloMenuUI : MonoBehaviour
     }
 
     // =========================
-    // PLAYERS TAB
+    // PLAYERS
     // =========================
 
     private void DrawPlayersTab()
@@ -517,13 +857,6 @@ public class JelloMenuUI : MonoBehaviour
         }
 
         GUILayout.EndScrollView();
-
-        GUILayout.Space(5);
-
-        GUILayout.Label(
-            "Player data shown here is limited to information exposed to the client.",
-            labelStyle
-        );
     }
 
     // =========================
@@ -561,18 +894,14 @@ public class JelloMenuUI : MonoBehaviour
                 player.Name;
 
             if (showPlayerColor)
-            {
                 text +=
                     " | " +
                     player.Color;
-            }
 
             if (showPlayerStatus)
-            {
                 text +=
                     " | " +
                     player.Status;
-            }
 
             GUILayout.Label(
                 text,
@@ -581,111 +910,6 @@ public class JelloMenuUI : MonoBehaviour
         }
 
         GUILayout.EndArea();
-    }
-
-    // =========================
-    // UI TAB
-    // =========================
-
-    private void DrawUITab()
-    {
-        GUILayout.Label(
-            "UI",
-            titleStyle
-        );
-
-        GUILayout.Space(10);
-
-        GUILayout.Label(
-            $"Menu Opacity: {menuOpacity:0.00}",
-            labelStyle
-        );
-
-        menuOpacity =
-            GUILayout.HorizontalSlider(
-                menuOpacity,
-                0f,
-                1f
-            );
-
-        GUILayout.Label(
-            $"Background Transparency: {backgroundTransparency:0.00}",
-            labelStyle
-        );
-
-        backgroundTransparency =
-            GUILayout.HorizontalSlider(
-                backgroundTransparency,
-                0f,
-                1f
-            );
-
-        GUILayout.Label(
-            "0 = opaque, 1 = invisible",
-            labelStyle
-        );
-
-        GUILayout.Space(8);
-
-        GUILayout.Label(
-            $"UI Scale: {uiScale:0.00}",
-            labelStyle
-        );
-
-        uiScale =
-            GUILayout.HorizontalSlider(
-                uiScale,
-                0.75f,
-                1.5f
-            );
-
-        GUILayout.Space(10);
-
-        if (GUILayout.Button(
-            "Black Background",
-            GUILayout.Height(30)
-        ))
-        {
-            backgroundColor =
-                Color.black;
-        }
-
-        if (GUILayout.Button(
-            "Jello Green",
-            GUILayout.Height(30)
-        ))
-        {
-            backgroundColor =
-                new Color(
-                    0.05f,
-                    0.5f,
-                    0.2f,
-                    1f
-                );
-        }
-
-        if (GUILayout.Button(
-            "Cyan",
-            GUILayout.Height(30)
-        ))
-        {
-            backgroundColor =
-                Color.cyan;
-        }
-
-        if (GUILayout.Button(
-            "Purple",
-            GUILayout.Height(30)
-        ))
-        {
-            backgroundColor =
-                new Color(
-                    0.45f,
-                    0.1f,
-                    0.7f,
-                    1f
-                );
-        }
     }
 
     // =========================
@@ -714,6 +938,7 @@ public class JelloMenuUI : MonoBehaviour
             ))
             {
                 waitingForKey = true;
+
                 statusText =
                     "Press a key...";
             }
@@ -756,7 +981,8 @@ public class JelloMenuUI : MonoBehaviour
             GUILayout.Height(35)
         ))
         {
-            menuKey = KeyCode.Delete;
+            menuKey =
+                KeyCode.Delete;
 
             PlayerPrefs.SetString(
                 "Jello_MenuKey",
@@ -841,7 +1067,7 @@ public class JelloMenuUI : MonoBehaviour
     }
 
     // =========================
-    // HOST TAB
+    // HOST
     // =========================
 
     private void DrawHostTab()
@@ -930,7 +1156,11 @@ public class JelloMenuUI : MonoBehaviour
 
             menuOpacity = 1f;
             uiScale = 1f;
-            backgroundTransparency = 0.15f;
+            backgroundTransparency =
+                0.15f;
+
+            animationSpeed = 8f;
+            animationsEnabled = true;
 
             statusText =
                 "Jello settings reset.";
@@ -1079,25 +1309,20 @@ public class JelloMenuUI : MonoBehaviour
                 Event.current.mousePosition;
 
             if (fpsRect.Contains(mouse))
-            {
                 fpsRect.position +=
                     Event.current.delta;
-            }
+
             else if (clockRect.Contains(mouse))
-            {
                 clockRect.position +=
                     Event.current.delta;
-            }
+
             else if (runtimeRect.Contains(mouse))
-            {
                 runtimeRect.position +=
                     Event.current.delta;
-            }
+
             else if (resolutionRect.Contains(mouse))
-            {
                 resolutionRect.position +=
                     Event.current.delta;
-            }
         }
     }
 
@@ -1121,16 +1346,11 @@ public class JelloMenuUI : MonoBehaviour
 
     private void RefreshPlayers()
     {
-        // Intentionally API-independent for now.
-        //
-        // Once we identify the exact PlayerControl/
-        // GameData API in your Among Us build, this
-        // method can populate the real player list.
         BuildDemoPlayerList();
     }
 
     // =========================
-    // RESET
+    // RESET HUD
     // =========================
 
     private void ResetHUD()
@@ -1184,6 +1404,22 @@ public class JelloMenuUI : MonoBehaviour
     }
 
     // =========================
+    // EASING
+    // =========================
+
+    private float EaseOutCubic(float value)
+    {
+        value =
+            Mathf.Clamp01(value);
+
+        return 1f -
+            Mathf.Pow(
+                1f - value,
+                3f
+            );
+    }
+
+    // =========================
     // STYLES
     // =========================
 
@@ -1234,7 +1470,7 @@ public class JelloMenuUI : MonoBehaviour
     }
 
     // =========================
-    // PLAYER DISPLAY DATA
+    // PLAYER DATA CLASS
     // =========================
 
     private class PlayerDisplayData
