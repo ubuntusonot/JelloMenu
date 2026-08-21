@@ -15,66 +15,114 @@ public class QOLMenuPlugin : BasePlugin
 
 public class JelloMenuUI : MonoBehaviour
 {
+    // =========================
+    // MENU
+    // =========================
+
     private bool menuOpen = false;
     private bool waitingForKey = false;
 
     private KeyCode menuKey = KeyCode.Delete;
 
-    private Rect window = new Rect(250, 150, 440, 400);
+    private Rect window = new Rect(250, 150, 440, 500);
 
     private GUIStyle? titleStyle;
     private GUIStyle? buttonStyle;
     private GUIStyle? labelStyle;
+    private GUIStyle? hudStyle;
 
     private string statusText = "Jello Loaded";
 
-    // HUD features
+    // =========================
+    // HUD
+    // =========================
+
+    private bool hudEnabled = true;
     private bool showFPS = true;
     private bool showClock = true;
+    private bool showRuntime = false;
+    private bool showResolution = false;
+
     private bool hudEditMode = false;
 
-    // UI settings
+    // =========================
+    // UI SETTINGS
+    // =========================
+
     private float menuOpacity = 1.0f;
     private float uiScale = 1.0f;
 
+    private int theme = 0;
+
+    // =========================
     // FPS
+    // =========================
+
     private float fps = 0f;
     private float fpsTimer = 0f;
     private int fpsFrames = 0;
 
-    // HUD positions
-    private Rect fpsRect = new Rect(15, 15, 180, 30);
-    private Rect clockRect = new Rect(15, 45, 180, 30);
+    private float fpsWarning = 30f;
+
+    // =========================
+    // HUD POSITIONS
+    // =========================
+
+    private Rect fpsRect =
+        new Rect(15, 15, 180, 30);
+
+    private Rect clockRect =
+        new Rect(15, 45, 180, 30);
+
+    private Rect runtimeRect =
+        new Rect(15, 75, 220, 30);
+
+    private Rect resolutionRect =
+        new Rect(15, 105, 250, 30);
+
+    // =========================
+    // START
+    // =========================
 
     private void Start()
     {
-        // Load saved keybind.
         string savedKey = PlayerPrefs.GetString(
             "Jello_MenuKey",
-            "F4"
+            "Delete"
         );
 
-        if (Enum.TryParse(savedKey, out KeyCode loadedKey))
+        if (Enum.TryParse(
+            savedKey,
+            out KeyCode loadedKey))
+        {
             menuKey = loadedKey;
+        }
     }
+
+    // =========================
+    // UPDATE
+    // =========================
 
     private void Update()
     {
-        // FPS calculation.
         fpsFrames++;
         fpsTimer += Time.unscaledDeltaTime;
 
         if (fpsTimer >= 0.5f)
         {
             fps = fpsFrames / fpsTimer;
+
             fpsFrames = 0;
             fpsTimer = 0f;
         }
     }
 
+    // =========================
+    // GUI
+    // =========================
+
     private void OnGUI()
     {
-        // Menu keybind.
         if (!waitingForKey &&
             Event.current != null &&
             Event.current.type == EventType.KeyDown &&
@@ -89,12 +137,12 @@ public class JelloMenuUI : MonoBehaviour
             Event.current.Use();
         }
 
+        CreateStyles();
+
         DrawHUD();
 
         if (!menuOpen)
             return;
-
-        CreateStyles();
 
         Color oldColor = GUI.color;
         Matrix4x4 oldMatrix = GUI.matrix;
@@ -119,7 +167,9 @@ public class JelloMenuUI : MonoBehaviour
         window = GUI.Window(
             12345,
             window,
-            (GUI.WindowFunction)((id) => DrawMenu(id)),
+            (GUI.WindowFunction)(
+                (id) => DrawMenu(id)
+            ),
             "Jello"
         );
 
@@ -127,14 +177,28 @@ public class JelloMenuUI : MonoBehaviour
         GUI.color = oldColor;
     }
 
+    // =========================
+    // HUD
+    // =========================
+
     private void DrawHUD()
     {
+        if (!hudEnabled)
+            return;
+
+        Color oldColor = GUI.color;
+
         if (showFPS)
         {
+            GUI.color = GetFPSColor();
+
             GUI.Label(
                 fpsRect,
-                $"FPS: {fps:0}"
+                $"FPS: {fps:0}",
+                hudStyle
             );
+
+            GUI.color = oldColor;
 
             if (hudEditMode)
                 GUI.Box(fpsRect, "");
@@ -144,33 +208,88 @@ public class JelloMenuUI : MonoBehaviour
         {
             GUI.Label(
                 clockRect,
-                DateTime.Now.ToString("HH:mm:ss")
+                DateTime.Now.ToString(
+                    "HH:mm:ss"
+                ),
+                hudStyle
             );
 
             if (hudEditMode)
                 GUI.Box(clockRect, "");
         }
 
-        // Allow HUD elements to be dragged.
+        if (showRuntime)
+        {
+            TimeSpan runtime =
+                TimeSpan.FromSeconds(
+                    Time.realtimeSinceStartup
+                );
+
+            GUI.Label(
+                runtimeRect,
+                $"Runtime: {runtime:hh\\:mm\\:ss}",
+                hudStyle
+            );
+
+            if (hudEditMode)
+                GUI.Box(runtimeRect, "");
+        }
+
+        if (showResolution)
+        {
+            GUI.Label(
+                resolutionRect,
+                $"Resolution: {Screen.width}x{Screen.height}",
+                hudStyle
+            );
+
+            if (hudEditMode)
+                GUI.Box(resolutionRect, "");
+        }
+
+        // HUD dragging
         if (hudEditMode &&
             Event.current != null &&
             Event.current.type == EventType.MouseDrag &&
             Event.current.button == 0)
         {
-            Vector2 mouse = Event.current.mousePosition;
+            Vector2 mouse =
+                Event.current.mousePosition;
 
             if (fpsRect.Contains(mouse))
             {
-                fpsRect.position += Event.current.delta;
+                fpsRect.position +=
+                    Event.current.delta;
+
                 Event.current.Use();
             }
             else if (clockRect.Contains(mouse))
             {
-                clockRect.position += Event.current.delta;
+                clockRect.position +=
+                    Event.current.delta;
+
+                Event.current.Use();
+            }
+            else if (runtimeRect.Contains(mouse))
+            {
+                runtimeRect.position +=
+                    Event.current.delta;
+
+                Event.current.Use();
+            }
+            else if (resolutionRect.Contains(mouse))
+            {
+                resolutionRect.position +=
+                    Event.current.delta;
+
                 Event.current.Use();
             }
         }
     }
+
+    // =========================
+    // MENU
+    // =========================
 
     private void DrawMenu(int id)
     {
@@ -181,16 +300,27 @@ public class JelloMenuUI : MonoBehaviour
             titleStyle
         );
 
-        GUILayout.Space(10);
-
         GUILayout.Label(
             statusText,
             labelStyle
         );
 
-        GUILayout.Space(10);
+        GUILayout.Space(8);
 
-        // HUD toggles.
+        // -------------------------
+        // HUD
+        // -------------------------
+
+        GUILayout.Label(
+            "HUD",
+            titleStyle
+        );
+
+        hudEnabled = GUILayout.Toggle(
+            hudEnabled,
+            "Enable HUD"
+        );
+
         showFPS = GUILayout.Toggle(
             showFPS,
             "Show FPS"
@@ -201,40 +331,100 @@ public class JelloMenuUI : MonoBehaviour
             "Show Clock"
         );
 
+        showRuntime = GUILayout.Toggle(
+            showRuntime,
+            "Show Runtime"
+        );
+
+        showResolution = GUILayout.Toggle(
+            showResolution,
+            "Show Resolution"
+        );
+
         hudEditMode = GUILayout.Toggle(
             hudEditMode,
             "Edit HUD"
         );
 
-        GUILayout.Space(10);
+        GUILayout.Space(8);
 
-        // Opacity.
+        // -------------------------
+        // FPS
+        // -------------------------
+
+        GUILayout.Label(
+            $"FPS Warning: {fpsWarning:0}",
+            labelStyle
+        );
+
+        fpsWarning = GUILayout.HorizontalSlider(
+            fpsWarning,
+            10f,
+            120f
+        );
+
+        // -------------------------
+        // UI
+        // -------------------------
+
+        GUILayout.Label(
+            "UI",
+            titleStyle
+        );
+
         GUILayout.Label(
             $"Menu Opacity: {menuOpacity:0.00}",
             labelStyle
         );
 
-        menuOpacity = GUILayout.HorizontalSlider(
-            menuOpacity,
-            0.25f,
-            1.0f
-        );
+        menuOpacity =
+            GUILayout.HorizontalSlider(
+                menuOpacity,
+                0.25f,
+                1.0f
+            );
 
-        // Scale.
         GUILayout.Label(
             $"UI Scale: {uiScale:0.00}",
             labelStyle
         );
 
-        uiScale = GUILayout.HorizontalSlider(
-            uiScale,
-            0.75f,
-            1.5f
+        uiScale =
+            GUILayout.HorizontalSlider(
+                uiScale,
+                0.75f,
+                1.5f
+            );
+
+        // -------------------------
+        // THEME
+        // -------------------------
+
+        GUILayout.Label(
+            "Theme",
+            titleStyle
         );
 
-        GUILayout.Space(10);
+        if (GUILayout.Button(
+            "Change Theme",
+            GUILayout.Height(32)
+        ))
+        {
+            theme++;
 
-        // Keybind section.
+            if (theme > 2)
+                theme = 0;
+
+            ApplyTheme();
+
+            statusText =
+                "Theme changed.";
+        }
+
+        // -------------------------
+        // KEYBIND
+        // -------------------------
+
         GUILayout.Label(
             "Menu Key: " + menuKey,
             labelStyle
@@ -248,7 +438,8 @@ public class JelloMenuUI : MonoBehaviour
             ))
             {
                 waitingForKey = true;
-                statusText = "Press a key...";
+                statusText =
+                    "Press a key...";
             }
         }
         else
@@ -259,9 +450,11 @@ public class JelloMenuUI : MonoBehaviour
             );
 
             if (Event.current != null &&
-                Event.current.type == EventType.KeyDown)
+                Event.current.type ==
+                EventType.KeyDown)
             {
-                KeyCode newKey = Event.current.keyCode;
+                KeyCode newKey =
+                    Event.current.keyCode;
 
                 if (newKey != KeyCode.None)
                 {
@@ -290,59 +483,63 @@ public class JelloMenuUI : MonoBehaviour
             GUILayout.Height(30)
         ))
         {
-            menuKey = KeyCode.F4;
+            menuKey = KeyCode.Delete;
 
             PlayerPrefs.SetString(
                 "Jello_MenuKey",
-                "F4"
+                "Delete"
             );
 
             PlayerPrefs.Save();
 
             waitingForKey = false;
 
-            statusText = "Keybind reset to F4.";
+            statusText =
+                "Keybind reset to Delete.";
         }
 
-        GUILayout.Space(10);
+        GUILayout.Space(8);
 
-        // Test.
+        // -------------------------
+        // BUTTONS
+        // -------------------------
+
         if (GUILayout.Button(
             "Test Button",
             GUILayout.Height(35)
         ))
         {
-            statusText = "Button works!";
+            statusText =
+                "Button works!";
 
             Debug.Log(
                 "[Jello] Test Button Works!"
             );
         }
 
-        // Reset HUD.
         if (GUILayout.Button(
             "Reset HUD",
             GUILayout.Height(30)
         ))
         {
-            fpsRect = new Rect(
-                15,
-                15,
-                180,
-                30
-            );
+            ResetHUD();
 
-            clockRect = new Rect(
-                15,
-                45,
-                180,
-                30
-            );
-
-            statusText = "HUD reset.";
+            statusText =
+                "HUD reset.";
         }
 
-        // Close.
+        if (GUILayout.Button(
+            "Reset UI",
+            GUILayout.Height(30)
+        ))
+        {
+            menuOpacity = 1.0f;
+            uiScale = 1.0f;
+
+            statusText =
+                "UI reset.";
+        }
+
         if (GUILayout.Button(
             "Close",
             GUILayout.Height(30)
@@ -363,6 +560,131 @@ public class JelloMenuUI : MonoBehaviour
         );
     }
 
+    // =========================
+    // FPS COLOR
+    // =========================
+
+    private Color GetFPSColor()
+    {
+        if (fps >= fpsWarning)
+        {
+            return Color.green;
+        }
+
+        if (fps >= fpsWarning * 0.66f)
+        {
+            return Color.yellow;
+        }
+
+        return Color.red;
+    }
+
+    // =========================
+    // RESET HUD
+    // =========================
+
+    private void ResetHUD()
+    {
+        fpsRect = new Rect(
+            15,
+            15,
+            180,
+            30
+        );
+
+        clockRect = new Rect(
+            15,
+            45,
+            180,
+            30
+        );
+
+        runtimeRect = new Rect(
+            15,
+            75,
+            220,
+            30
+        );
+
+        resolutionRect = new Rect(
+            15,
+            105,
+            250,
+            30
+        );
+    }
+
+    // =========================
+    // THEME
+    // =========================
+
+    private void ApplyTheme()
+    {
+        if (titleStyle == null ||
+            labelStyle == null ||
+            buttonStyle == null)
+        {
+            return;
+        }
+
+        if (theme == 0)
+        {
+            // Default
+            titleStyle.normal.textColor =
+                Color.white;
+
+            labelStyle.normal.textColor =
+                Color.white;
+
+            buttonStyle.normal.textColor =
+                Color.white;
+        }
+        else if (theme == 1)
+        {
+            // Jello Green
+            titleStyle.normal.textColor =
+                new Color(
+                    0.3f,
+                    1f,
+                    0.5f
+                );
+
+            labelStyle.normal.textColor =
+                new Color(
+                    0.8f,
+                    1f,
+                    0.85f
+                );
+
+            buttonStyle.normal.textColor =
+                new Color(
+                    0.5f,
+                    1f,
+                    0.6f
+                );
+        }
+        else
+        {
+            // Cyan
+            titleStyle.normal.textColor =
+                Color.cyan;
+
+            labelStyle.normal.textColor =
+                new Color(
+                    0.8f,
+                    0.95f,
+                    1f
+                );
+
+            buttonStyle.normal.textColor =
+                Color.cyan;
+        }
+    }
+
+    // =========================
+    // STYLES
+    // =========================
+
     private void CreateStyles()
     {
         if (titleStyle != null)
@@ -372,9 +694,10 @@ public class JelloMenuUI : MonoBehaviour
             GUI.skin.label
         )
         {
-            fontSize = 24,
+            fontSize = 20,
             fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter
+            alignment =
+                TextAnchor.MiddleCenter
         };
 
         labelStyle = new GUIStyle(
@@ -382,7 +705,16 @@ public class JelloMenuUI : MonoBehaviour
         )
         {
             fontSize = 14,
-            alignment = TextAnchor.MiddleCenter
+            alignment =
+                TextAnchor.MiddleCenter
+        };
+
+        hudStyle = new GUIStyle(
+            GUI.skin.label
+        )
+        {
+            fontSize = 16,
+            fontStyle = FontStyle.Bold
         };
 
         buttonStyle = new GUIStyle(
@@ -391,5 +723,7 @@ public class JelloMenuUI : MonoBehaviour
         {
             fontSize = 14
         };
+
+        ApplyTheme();
     }
 }
