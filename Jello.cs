@@ -4,28 +4,32 @@ using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using UnityEngine;
 
-[BepInPlugin("org.vinegar.gfr", "Jello", "1.0.0")]
+[BepInPlugin("org.vinegar.gfr", "Jello", "1.1.0")]
 public class QOLMenuPlugin : BasePlugin
 {
     public override void Load()
     {
-        Log.LogInfo("Do You Even Read The Logs?");
+        Log.LogInfo("[Jello] Loading Jello 1.1.0");
         AddComponent<JelloMenuUI>();
     }
 }
 
 public class JelloMenuUI : MonoBehaviour
 {
-    private bool menuOpen = false;
-    private bool waitingForKey = false;
+    // =========================================================
+    // MENU
+    // =========================================================
+
+    private bool menuOpen;
+    private bool waitingForKey;
 
     private KeyCode menuKey = KeyCode.Delete;
 
     private Rect window =
-        new Rect(250, 150, 500, 520);
+        new Rect(250, 120, 650, 560);
 
-    private int currentTab = 0;
-    private int previousTab = 0;
+    private int currentTab;
+    private int previousTab;
 
     private readonly string[] tabs =
     {
@@ -39,65 +43,76 @@ public class JelloMenuUI : MonoBehaviour
         "About"
     };
 
-    private GUIStyle? titleStyle;
-    private GUIStyle? buttonStyle;
-    private GUIStyle? labelStyle;
-    private GUIStyle? hudStyle;
+    // =========================================================
+    // STYLES
+    // =========================================================
 
-    private string statusText =
-        "Jello Loaded";
+    private GUIStyle titleStyle;
+    private GUIStyle labelStyle;
+    private GUIStyle hudStyle;
+    private GUIStyle smallStyle;
+    private GUIStyle boxStyle;
 
-    // =========================
+    // =========================================================
+    // STATUS / NOTIFICATIONS
+    // =========================================================
+
+    private string statusText = "Jello Loaded";
+
+    private readonly List<string> notifications =
+        new List<string>();
+
+    private float notificationTimer;
+
+    // =========================================================
     // ANIMATION
-    // =========================
+    // =========================================================
 
     private bool animationsEnabled = true;
 
     private float animationSpeed = 8f;
 
-    private float menuAnimation = 0f;
+    private float menuAnimation;
+    private float targetMenuAnimation;
+
     private float tabAnimation = 1f;
 
-    private float targetMenuAnimation = 0f;
+    private float[] tabHover =
+        new float[8];
 
-    private float hoverAnimation = 0f;
-
-    // =========================
+    // =========================================================
     // UI
-    // =========================
+    // =========================================================
 
-    private float menuOpacity = 1.0f;
-    private float uiScale = 1.0f;
+    private float menuOpacity = 1f;
+
+    private float uiScale = 1f;
 
     private Color backgroundColor =
-        new Color(0.05f, 0.05f, 0.07f, 1f);
+        new Color(0.04f, 0.045f, 0.06f, 1f);
 
-    private float backgroundTransparency = 0.15f;
+    private Color accentColor =
+        new Color(0.25f, 1f, 0.5f, 1f);
 
-    // =========================
+    private float backgroundTransparency;
+
+    private int theme;
+
+    // =========================================================
     // HUD
-    // =========================
+    // =========================================================
 
     private bool hudEnabled = true;
     private bool showFPS = true;
     private bool showClock = true;
-    private bool showRuntime = false;
-    private bool showResolution = false;
-    private bool hudEditMode = false;
+    private bool showRuntime;
+    private bool showResolution;
+    private bool showFPSGraph;
+    private bool hudEditMode;
 
-    // =========================
-    // FPS
-    // =========================
+    private bool showStatus;
 
-    private float fps = 0f;
-    private float fpsTimer = 0f;
-    private int fpsFrames = 0;
-
-    private float fpsWarning = 30f;
-
-    // =========================
-    // HUD POSITIONS
-    // =========================
+    private Color hudColor = Color.white;
 
     private Rect fpsRect =
         new Rect(15, 15, 180, 30);
@@ -111,73 +126,191 @@ public class JelloMenuUI : MonoBehaviour
     private Rect resolutionRect =
         new Rect(15, 105, 250, 30);
 
-    // =========================
-    // PLAYERS
-    // =========================
+    private Rect graphRect =
+        new Rect(15, 140, 220, 70);
 
-    private bool playersOverlay = false;
+    private float fpsWarning = 30f;
+
+    // =========================================================
+    // FPS
+    // =========================================================
+
+    private float fps;
+
+    private float fpsTimer;
+
+    private int fpsFrames;
+
+    private readonly float[] fpsHistory =
+        new float[60];
+
+    private int fpsHistoryIndex;
+
+    // =========================================================
+    // PLAYERS
+    // =========================================================
+
+    private bool playersOverlay;
+
     private bool showPlayerColor = true;
+
     private bool showPlayerStatus = true;
+
     private bool showPlayerDevice = true;
 
-    private Vector2 playerScroll =
-        Vector2.zero;
+    private bool showIdleTime = true;
 
-    private readonly List<PlayerDisplayData>
-        players =
+    private bool sortPlayers;
+
+    private string playerSearch = "";
+
+    private Vector2 playerScroll;
+
+    private readonly List<PlayerDisplayData> players =
         new List<PlayerDisplayData>();
 
-    // =========================
+    private float playerRefreshTimer;
+
+    // =========================================================
     // COSMETICS
-    // =========================
+    // =========================================================
 
-    private bool cosmeticsWarning =
-        true;
+    private bool cosmeticsWarning = true;
 
-    // =========================
+    private int cosmeticCategory;
+
+    private readonly string[] cosmeticCategories =
+    {
+        "Hats",
+        "Skins",
+        "Pets",
+        "Visors",
+        "Nameplates"
+    };
+
+    private readonly string[] cosmeticItems =
+    {
+        "Default",
+        "Classic",
+        "Blue",
+        "Red",
+        "Green",
+        "Purple",
+        "Gold",
+        "Shadow",
+        "Explorer",
+        "Astronaut"
+    };
+
+    // =========================================================
+    // HOST
+    // =========================================================
+
+    private int hostSection;
+
+    private readonly string[] hostSections =
+    {
+        "Overview",
+        "Players",
+        "Lobby",
+        "Presets"
+    };
+
+    private bool hostConfirmation;
+
+    private string pendingHostAction = "";
+
+    // =========================================================
+    // MISC
+    // =========================================================
+
+    private bool debugInfo;
+
+    private bool notificationsEnabled = true;
+
+    private bool compactMode;
+
+    private int selectedPreset;
+
+    private readonly string[] presetNames =
+    {
+        "Default",
+        "Minimal",
+        "Performance",
+        "Streamer"
+    };
+
+    // =========================================================
     // START
-    // =========================
+    // =========================================================
 
     private void Start()
     {
-        string savedKey =
-            PlayerPrefs.GetString(
-                "Jello_MenuKey",
-                "Delete"
-            );
-
-        if (Enum.TryParse(
-            savedKey,
-            out KeyCode loadedKey))
-        {
-            menuKey = loadedKey;
-        }
+        LoadSettings();
 
         BuildDemoPlayerList();
+
+        AddNotification(
+            "Jello loaded successfully."
+        );
     }
 
-    // =========================
+    // =========================================================
     // UPDATE
-    // =========================
+    // =========================================================
 
     private void Update()
     {
-        // FPS
+        UpdateFPS();
+
+        UpdateAnimation();
+
+        UpdatePlayers();
+
+        if (notificationTimer > 0f)
+        {
+            notificationTimer -=
+                Time.unscaledDeltaTime;
+        }
+    }
+
+    // =========================================================
+    // FPS
+    // =========================================================
+
+    private void UpdateFPS()
+    {
         fpsFrames++;
-        fpsTimer += Time.unscaledDeltaTime;
+
+        fpsTimer +=
+            Time.unscaledDeltaTime;
 
         if (fpsTimer >= 0.5f)
         {
-            fps = fpsFrames / fpsTimer;
+            fps =
+                fpsFrames /
+                fpsTimer;
 
             fpsFrames = 0;
+
             fpsTimer = 0f;
+
+            fpsHistory[
+                fpsHistoryIndex
+            ] = fps;
+
+            fpsHistoryIndex =
+                (fpsHistoryIndex + 1) %
+                fpsHistory.Length;
         }
+    }
 
-        // =========================
-        // MENU ANIMATION
-        // =========================
+    // =========================================================
+    // ANIMATION
+    // =========================================================
 
+    private void UpdateAnimation()
+    {
         targetMenuAnimation =
             menuOpen ? 1f : 0f;
 
@@ -187,61 +320,78 @@ public class JelloMenuUI : MonoBehaviour
                 targetMenuAnimation;
 
             tabAnimation = 1f;
-        }
-        else
-        {
-            menuAnimation =
-                Mathf.MoveTowards(
-                    menuAnimation,
-                    targetMenuAnimation,
-                    Time.unscaledDeltaTime *
-                    animationSpeed
-                );
 
-            tabAnimation =
-                Mathf.MoveTowards(
-                    tabAnimation,
-                    1f,
-                    Time.unscaledDeltaTime *
-                    animationSpeed * 1.5f
-                );
+            return;
         }
+
+        menuAnimation =
+            Mathf.MoveTowards(
+                menuAnimation,
+                targetMenuAnimation,
+                Time.unscaledDeltaTime *
+                animationSpeed
+            );
+
+        tabAnimation =
+            Mathf.MoveTowards(
+                tabAnimation,
+                1f,
+                Time.unscaledDeltaTime *
+                animationSpeed
+            );
     }
 
-    // =========================
+    // =========================================================
     // GUI
-    // =========================
+    // =========================================================
 
     private void OnGUI()
     {
-        // Menu key
-        if (!waitingForKey &&
-            Event.current != null &&
-            Event.current.type == EventType.KeyDown &&
-            Event.current.keyCode == menuKey)
-        {
-            menuOpen = !menuOpen;
-
-            Event.current.Use();
-        }
-
         CreateStyles();
+
+        HandleMenuKey();
 
         DrawHUD();
 
         if (playersOverlay)
             DrawPlayersOverlay();
 
-        // Allow closing animation to finish.
+        DrawNotifications();
+
         if (menuAnimation <= 0.001f)
             return;
 
         DrawAnimatedMenu();
     }
 
-    // =========================
+    // =========================================================
+    // MENU KEY
+    // =========================================================
+
+    private void HandleMenuKey()
+    {
+        if (waitingForKey)
+            return;
+
+        if (Event.current == null)
+            return;
+
+        if (Event.current.type !=
+            EventType.KeyDown)
+            return;
+
+        if (Event.current.keyCode !=
+            menuKey)
+            return;
+
+        menuOpen = !menuOpen;
+
+        Event.current.Use();
+    }
+
+    // =========================================================
     // ANIMATED MENU
-    // =========================
+    // =========================================================
 
     private void DrawAnimatedMenu()
     {
@@ -256,19 +406,14 @@ public class JelloMenuUI : MonoBehaviour
                 menuAnimation
             );
 
-        // Fade
-        float alpha =
-            eased * menuOpacity;
-
         GUI.color =
             new Color(
                 1f,
                 1f,
                 1f,
-                alpha
+                eased * menuOpacity
             );
 
-        // Scale around window center.
         float scale =
             Mathf.Lerp(
                 0.90f,
@@ -301,24 +446,20 @@ public class JelloMenuUI : MonoBehaviour
             );
 
         window = GUI.Window(
-            12345,
+            1337,
             window,
-            (GUI.WindowFunction)(
-                (id) => DrawMenu(id)
-            ),
+            DrawMenu,
             "Jello"
         );
 
-        GUI.matrix =
-            oldMatrix;
+        GUI.matrix = oldMatrix;
 
-        GUI.color =
-            oldColor;
+        GUI.color = oldColor;
     }
 
-    // =========================
-    // MENU
-    // =========================
+    // =========================================================
+    // MAIN MENU
+    // =========================================================
 
     private void DrawMenu(int id)
     {
@@ -326,148 +467,13 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.BeginHorizontal();
 
-        // =========================
-        // TAB BAR
-        // =========================
-
-        GUILayout.BeginVertical(
-            GUILayout.Width(115)
-        );
-
-        GUILayout.Space(10);
-
-        GUILayout.Label(
-            "JELLO",
-            titleStyle
-        );
-
-        GUILayout.Space(10);
-
-        for (int i = 0; i < tabs.Length; i++)
-        {
-            bool selected =
-                currentTab == i;
-
-            Rect buttonRect =
-                GUILayoutUtility.GetRect(
-                    new GUIContent(
-                        tabs[i]
-                    ),
-                    GUI.skin.button,
-                    GUILayout.Height(36)
-                );
-
-            // Hover animation
-            bool hovered =
-                buttonRect.Contains(
-                    Event.current.mousePosition
-                );
-
-            if (hovered)
-            {
-                hoverAnimation =
-                    Mathf.MoveTowards(
-                        hoverAnimation,
-                        1f,
-                        Time.unscaledDeltaTime *
-                        animationSpeed
-                    );
-            }
-            else
-            {
-                hoverAnimation =
-                    Mathf.MoveTowards(
-                        hoverAnimation,
-                        0f,
-                        Time.unscaledDeltaTime *
-                        animationSpeed
-                    );
-            }
-
-            Color oldColor =
-                GUI.color;
-
-            if (selected)
-            {
-                GUI.color =
-                    Color.Lerp(
-                        new Color(
-                            0.3f,
-                            0.8f,
-                            0.4f
-                        ),
-                        new Color(
-                            0.3f,
-                            1f,
-                            0.5f
-                        ),
-                        hoverAnimation
-                    );
-            }
-            else if (hovered)
-            {
-                GUI.color =
-                    new Color(
-                        0.75f,
-                        1f,
-                        0.8f
-                    );
-            }
-
-            if (GUI.Button(
-                buttonRect,
-                tabs[i]
-            ))
-            {
-                if (currentTab != i)
-                {
-                    previousTab =
-                        currentTab;
-
-                    currentTab = i;
-
-                    tabAnimation = 0f;
-
-                    waitingForKey = false;
-                }
-            }
-
-            GUI.color =
-                oldColor;
-        }
-
-        GUILayout.FlexibleSpace();
-
-        if (GUILayout.Button(
-            "Close",
-            GUILayout.Height(32)
-        ))
-        {
-            menuOpen = false;
-            waitingForKey = false;
-        }
-
-        GUILayout.Space(10);
-
-        GUILayout.EndVertical();
-
-        // =========================
-        // CONTENT
-        // =========================
+        DrawTabs();
 
         GUILayout.BeginVertical();
 
-        GUILayout.Space(10);
+        GUILayout.Space(12);
 
-        // Tab transition
-        float tabAlpha =
-            animationsEnabled
-                ? EaseOutCubic(
-                    tabAnimation
-                )
-                : 1f;
-
-        Color oldGUI =
+        Color oldColor =
             GUI.color;
 
         GUI.color =
@@ -475,7 +481,9 @@ public class JelloMenuUI : MonoBehaviour
                 1f,
                 1f,
                 1f,
-                tabAlpha
+                animationsEnabled
+                    ? EaseOutCubic(tabAnimation)
+                    : 1f
             );
 
         switch (currentTab)
@@ -513,8 +521,7 @@ public class JelloMenuUI : MonoBehaviour
                 break;
         }
 
-        GUI.color =
-            oldGUI;
+        GUI.color = oldColor;
 
         GUILayout.FlexibleSpace();
 
@@ -527,14 +534,386 @@ public class JelloMenuUI : MonoBehaviour
                 0,
                 0,
                 window.width,
-                45
+                42
             )
         );
     }
 
-    // =========================
+    // =========================================================
+    // TABS
+    // =========================================================
+
+    private void DrawTabs()
+    {
+        GUILayout.BeginVertical(
+            GUILayout.Width(
+                compactMode ? 95 : 125
+            )
+        );
+
+        GUILayout.Space(12);
+
+        GUILayout.Label(
+            "JELLO",
+            titleStyle
+        );
+
+        GUILayout.Space(10);
+
+        for (int i = 0;
+             i < tabs.Length;
+             i++)
+        {
+            Rect rect =
+                GUILayoutUtility.GetRect(
+                    new GUIContent(tabs[i]),
+                    GUI.skin.button,
+                    GUILayout.Height(38)
+                );
+
+            bool hover =
+                rect.Contains(
+                    Event.current.mousePosition
+                );
+
+            tabHover[i] =
+                Mathf.MoveTowards(
+                    tabHover[i],
+                    hover ? 1f : 0f,
+                    Time.unscaledDeltaTime *
+                    animationSpeed
+                );
+
+            Color old =
+                GUI.color;
+
+            if (currentTab == i)
+            {
+                GUI.color =
+                    Color.Lerp(
+                        accentColor *
+                        0.65f,
+                        accentColor,
+                        tabHover[i]
+                    );
+            }
+            else if (hover)
+            {
+                GUI.color =
+                    new Color(
+                        0.8f,
+                        1f,
+                        0.85f
+                    );
+            }
+
+            if (GUI.Button(
+                rect,
+                tabs[i]
+            ))
+            {
+                SelectTab(i);
+            }
+
+            GUI.color = old;
+        }
+
+        GUILayout.FlexibleSpace();
+
+        if (GUILayout.Button(
+            "Close",
+            GUILayout.Height(36)
+        ))
+        {
+            menuOpen = false;
+            waitingForKey = false;
+        }
+
+        GUILayout.Space(10);
+
+        GUILayout.EndVertical();
+    }
+
+    // =========================================================
+    // SELECT TAB
+    // =========================================================
+
+    private void SelectTab(int index)
+    {
+        if (currentTab == index)
+            return;
+
+        previousTab = currentTab;
+
+        currentTab = index;
+
+        tabAnimation = 0f;
+
+        waitingForKey = false;
+    }
+
+    // =========================================================
+    // HUD TAB
+    // =========================================================
+
+    private void DrawHUDTab()
+    {
+        GUILayout.Label(
+            "HUD",
+            titleStyle
+        );
+
+        GUILayout.Space(8);
+
+        hudEnabled =
+            GUILayout.Toggle(
+                hudEnabled,
+                "Enable HUD"
+            );
+
+        showFPS =
+            GUILayout.Toggle(
+                showFPS,
+                "FPS"
+            );
+
+        showClock =
+            GUILayout.Toggle(
+                showClock,
+                "Clock"
+            );
+
+        showRuntime =
+            GUILayout.Toggle(
+                showRuntime,
+                "Runtime"
+            );
+
+        showResolution =
+            GUILayout.Toggle(
+                showResolution,
+                "Resolution"
+            );
+
+        showFPSGraph =
+            GUILayout.Toggle(
+                showFPSGraph,
+                "FPS Graph"
+            );
+
+        showStatus =
+            GUILayout.Toggle(
+                showStatus,
+                "Status"
+            );
+
+        hudEditMode =
+            GUILayout.Toggle(
+                hudEditMode,
+                "HUD Edit Mode"
+            );
+
+        GUILayout.Space(8);
+
+        GUILayout.Label(
+            $"FPS threshold: {fpsWarning:0}",
+            labelStyle
+        );
+
+        fpsWarning =
+            GUILayout.HorizontalSlider(
+                fpsWarning,
+                10f,
+                120f
+            );
+
+        GUILayout.Space(8);
+
+        if (GUILayout.Button(
+            "Move HUD Left",
+            GUILayout.Height(30)
+        ))
+        {
+            MoveHUD(-10f, 0f);
+        }
+
+        if (GUILayout.Button(
+            "Move HUD Right",
+            GUILayout.Height(30)
+        ))
+        {
+            MoveHUD(10f, 0f);
+        }
+
+        if (GUILayout.Button(
+            "Reset HUD",
+            GUILayout.Height(30)
+        ))
+        {
+            ResetHUD();
+
+            AddNotification(
+                "HUD reset."
+            );
+        }
+    }
+
+    // =========================================================
+    // PLAYERS TAB
+    // =========================================================
+
+    private void DrawPlayersTab()
+    {
+        GUILayout.Label(
+            "PLAYERS",
+            titleStyle
+        );
+
+        GUILayout.Space(6);
+
+        playersOverlay =
+            GUILayout.Toggle(
+                playersOverlay,
+                "Player Overlay"
+            );
+
+        showPlayerColor =
+            GUILayout.Toggle(
+                showPlayerColor,
+                "Color"
+            );
+
+        showPlayerStatus =
+            GUILayout.Toggle(
+                showPlayerStatus,
+                "Status"
+            );
+
+        showPlayerDevice =
+            GUILayout.Toggle(
+                showPlayerDevice,
+                "Device"
+            );
+
+        showIdleTime =
+            GUILayout.Toggle(
+                showIdleTime,
+                "Idle Time"
+            );
+
+        sortPlayers =
+            GUILayout.Toggle(
+                sortPlayers,
+                "Sort Alphabetically"
+            );
+
+        GUILayout.Label(
+            "Search",
+            labelStyle
+        );
+
+        playerSearch =
+            GUILayout.TextField(
+                playerSearch
+            );
+
+        GUILayout.Space(5);
+
+        if (GUILayout.Button(
+            "Refresh",
+            GUILayout.Height(32)
+        ))
+        {
+            RefreshPlayers();
+
+            AddNotification(
+                "Players refreshed."
+            );
+        }
+
+        playerScroll =
+            GUILayout.BeginScrollView(
+                playerScroll,
+                GUILayout.Height(245)
+            );
+
+        for (int i = 0;
+             i < players.Count;
+             i++)
+        {
+            PlayerDisplayData player =
+                players[i];
+
+            if (!string.IsNullOrEmpty(
+                playerSearch) &&
+                !player.Name.ToLower()
+                    .Contains(
+                        playerSearch.ToLower()
+                    ))
+                continue;
+
+            DrawPlayerCard(player);
+        }
+
+        GUILayout.EndScrollView();
+
+        GUILayout.Label(
+            "Player information is limited to data exposed by the client.",
+            smallStyle
+        );
+    }
+
+    // =========================================================
+    // PLAYER CARD
+    // =========================================================
+
+    private void DrawPlayerCard(
+        PlayerDisplayData player)
+    {
+        GUILayout.BeginVertical(
+            GUI.skin.box
+        );
+
+        GUILayout.Label(
+            player.Name,
+            labelStyle
+        );
+
+        if (showPlayerColor)
+            GUILayout.Label(
+                "Color: " + player.Color,
+                smallStyle
+            );
+
+        if (showPlayerStatus)
+            GUILayout.Label(
+                "Status: " + player.Status,
+                smallStyle
+            );
+
+        if (showPlayerDevice)
+            GUILayout.Label(
+                "Device: " + player.Device,
+                smallStyle
+            );
+
+        if (showIdleTime)
+            GUILayout.Label(
+                "Idle: " +
+                FormatTime(
+                    player.IdleTime
+                ),
+                smallStyle
+            );
+
+        GUILayout.EndVertical();
+
+        GUILayout.Space(4);
+    }
+
+    // =========================================================
     // UI TAB
-    // =========================
+    // =========================================================
 
     private void DrawUITab()
     {
@@ -543,49 +922,28 @@ public class JelloMenuUI : MonoBehaviour
             titleStyle
         );
 
-        GUILayout.Space(10);
-
-        // =========================
-        // ANIMATIONS
-        // =========================
-
-        GUILayout.BeginVertical(
-            GUI.skin.box
-        );
-
-        GUILayout.Label(
-            "Animations",
-            labelStyle
-        );
+        GUILayout.Space(8);
 
         animationsEnabled =
             GUILayout.Toggle(
                 animationsEnabled,
-                "Enable Animations"
+                "Animations"
             );
 
         GUILayout.Label(
-            $"Animation Speed: {animationSpeed:0.0}",
+            $"Animation speed: {animationSpeed:0.0}",
             labelStyle
         );
 
         animationSpeed =
             GUILayout.HorizontalSlider(
                 animationSpeed,
-                2f,
+                1f,
                 20f
             );
 
-        GUILayout.EndVertical();
-
-        GUILayout.Space(10);
-
-        // =========================
-        // OPACITY
-        // =========================
-
         GUILayout.Label(
-            $"Menu Opacity: {menuOpacity:0.00}",
+            $"Menu opacity: {menuOpacity:0.00}",
             labelStyle
         );
 
@@ -597,7 +955,7 @@ public class JelloMenuUI : MonoBehaviour
             );
 
         GUILayout.Label(
-            $"Background Transparency: {backgroundTransparency:0.00}",
+            $"Background transparency: {backgroundTransparency:0.00}",
             labelStyle
         );
 
@@ -609,18 +967,7 @@ public class JelloMenuUI : MonoBehaviour
             );
 
         GUILayout.Label(
-            "0 = opaque, 1 = invisible",
-            labelStyle
-        );
-
-        GUILayout.Space(8);
-
-        // =========================
-        // SCALE
-        // =========================
-
-        GUILayout.Label(
-            $"UI Scale: {uiScale:0.00}",
+            $"UI scale: {uiScale:0.00}",
             labelStyle
         );
 
@@ -631,290 +978,48 @@ public class JelloMenuUI : MonoBehaviour
                 1.5f
             );
 
-        GUILayout.Space(10);
-
-        if (GUILayout.Button(
-            "Black Background",
-            GUILayout.Height(30)
-        ))
-        {
-            backgroundColor =
-                Color.black;
-        }
-
-        if (GUILayout.Button(
-            "Jello Green",
-            GUILayout.Height(30)
-        ))
-        {
-            backgroundColor =
-                new Color(
-                    0.05f,
-                    0.5f,
-                    0.2f,
-                    1f
-                );
-        }
-
-        if (GUILayout.Button(
-            "Cyan",
-            GUILayout.Height(30)
-        ))
-        {
-            backgroundColor =
-                Color.cyan;
-        }
-
-        if (GUILayout.Button(
-            "Purple",
-            GUILayout.Height(30)
-        ))
-        {
-            backgroundColor =
-                new Color(
-                    0.45f,
-                    0.1f,
-                    0.7f,
-                    1f
-                );
-        }
-    }
-
-    // =========================
-    // HUD TAB
-    // =========================
-
-    private void DrawHUDTab()
-    {
-        GUILayout.Label(
-            "HUD",
-            titleStyle
-        );
-
-        GUILayout.Space(10);
-
-        hudEnabled =
-            GUILayout.Toggle(
-                hudEnabled,
-                "Enable HUD"
-            );
-
-        showFPS =
-            GUILayout.Toggle(
-                showFPS,
-                "Show FPS"
-            );
-
-        showClock =
-            GUILayout.Toggle(
-                showClock,
-                "Show Clock"
-            );
-
-        showRuntime =
-            GUILayout.Toggle(
-                showRuntime,
-                "Show Runtime"
-            );
-
-        showResolution =
-            GUILayout.Toggle(
-                showResolution,
-                "Show Resolution"
-            );
-
-        hudEditMode =
-            GUILayout.Toggle(
-                hudEditMode,
-                "Edit HUD"
-            );
-
-        GUILayout.Space(10);
+        GUILayout.Space(8);
 
         GUILayout.Label(
-            $"FPS Warning: {fpsWarning:0}",
+            "Themes",
             labelStyle
         );
 
-        fpsWarning =
-            GUILayout.HorizontalSlider(
-                fpsWarning,
-                10f,
-                120f
-            );
-
-        GUILayout.Space(10);
+        if (GUILayout.Button(
+            "Jello Green"
+        ))
+            ApplyTheme(0);
 
         if (GUILayout.Button(
-            "Reset HUD",
-            GUILayout.Height(35)
+            "Cyan"
         ))
-        {
-            ResetHUD();
-
-            statusText =
-                "HUD reset.";
-        }
-    }
-
-    // =========================
-    // PLAYERS
-    // =========================
-
-    private void DrawPlayersTab()
-    {
-        GUILayout.Label(
-            "PLAYERS",
-            titleStyle
-        );
-
-        GUILayout.Space(8);
-
-        playersOverlay =
-            GUILayout.Toggle(
-                playersOverlay,
-                "Show Player Overlay"
-            );
-
-        showPlayerColor =
-            GUILayout.Toggle(
-                showPlayerColor,
-                "Show Color"
-            );
-
-        showPlayerStatus =
-            GUILayout.Toggle(
-                showPlayerStatus,
-                "Show Status"
-            );
-
-        showPlayerDevice =
-            GUILayout.Toggle(
-                showPlayerDevice,
-                "Show Device"
-            );
-
-        GUILayout.Space(10);
+            ApplyTheme(1);
 
         if (GUILayout.Button(
-            "Refresh Players",
-            GUILayout.Height(32)
+            "Purple"
         ))
-        {
-            RefreshPlayers();
+            ApplyTheme(2);
 
-            statusText =
-                "Player list refreshed.";
-        }
+        if (GUILayout.Button(
+            "Red"
+        ))
+            ApplyTheme(3);
 
-        GUILayout.Space(8);
+        if (GUILayout.Button(
+            "Dark"
+        ))
+            ApplyTheme(4);
 
-        playerScroll =
-            GUILayout.BeginScrollView(
-                playerScroll,
-                GUILayout.Height(220)
+        compactMode =
+            GUILayout.Toggle(
+                compactMode,
+                "Compact Menu"
             );
-
-        foreach (PlayerDisplayData player
-                 in players)
-        {
-            GUILayout.BeginVertical(
-                GUI.skin.box
-            );
-
-            GUILayout.Label(
-                player.Name,
-                labelStyle
-            );
-
-            if (showPlayerColor)
-            {
-                GUILayout.Label(
-                    "Color: " + player.Color,
-                    labelStyle
-                );
-            }
-
-            if (showPlayerStatus)
-            {
-                GUILayout.Label(
-                    "Status: " + player.Status,
-                    labelStyle
-                );
-            }
-
-            if (showPlayerDevice)
-            {
-                GUILayout.Label(
-                    "Device: " + player.Device,
-                    labelStyle
-                );
-            }
-
-            GUILayout.EndVertical();
-
-            GUILayout.Space(4);
-        }
-
-        GUILayout.EndScrollView();
     }
 
-    // =========================
-    // PLAYER OVERLAY
-    // =========================
-
-    private void DrawPlayersOverlay()
-    {
-        Rect overlay =
-            new Rect(
-                15,
-                145,
-                250,
-                260
-            );
-
-        GUI.Box(
-            overlay,
-            "Players"
-        );
-
-        GUILayout.BeginArea(
-            new Rect(
-                overlay.x + 10,
-                overlay.y + 30,
-                overlay.width - 20,
-                overlay.height - 40
-            )
-        );
-
-        foreach (PlayerDisplayData player
-                 in players)
-        {
-            string text =
-                player.Name;
-
-            if (showPlayerColor)
-                text +=
-                    " | " +
-                    player.Color;
-
-            if (showPlayerStatus)
-                text +=
-                    " | " +
-                    player.Status;
-
-            GUILayout.Label(
-                text,
-                labelStyle
-            );
-        }
-
-        GUILayout.EndArea();
-    }
-
-    // =========================
+    // =========================================================
     // KEYBINDS
-    // =========================
+    // =========================================================
 
     private void DrawKeybindTab()
     {
@@ -926,14 +1031,14 @@ public class JelloMenuUI : MonoBehaviour
         GUILayout.Space(10);
 
         GUILayout.Label(
-            "Menu Key: " + menuKey,
+            "Menu key: " + menuKey,
             labelStyle
         );
 
         if (!waitingForKey)
         {
             if (GUILayout.Button(
-                "Change Keybind",
+                "Change Menu Key",
                 GUILayout.Height(40)
             ))
             {
@@ -954,53 +1059,47 @@ public class JelloMenuUI : MonoBehaviour
                 Event.current.type ==
                 EventType.KeyDown)
             {
-                KeyCode newKey =
-                    Event.current.keyCode;
-
-                if (newKey != KeyCode.None)
+                if (Event.current.keyCode !=
+                    KeyCode.None)
                 {
-                    menuKey = newKey;
-
-                    PlayerPrefs.SetString(
-                        "Jello_MenuKey",
-                        menuKey.ToString()
-                    );
-
-                    PlayerPrefs.Save();
+                    menuKey =
+                        Event.current.keyCode;
 
                     waitingForKey = false;
 
-                    statusText =
-                        "Keybind changed.";
+                    SaveSettings();
+
+                    AddNotification(
+                        "Keybind saved."
+                    );
+
+                    Event.current.Use();
                 }
             }
         }
 
+        GUILayout.Space(8);
+
         if (GUILayout.Button(
-            "Reset Keybind",
-            GUILayout.Height(35)
+            "Reset Keybind"
         ))
         {
             menuKey =
                 KeyCode.Delete;
 
-            PlayerPrefs.SetString(
-                "Jello_MenuKey",
-                "Delete"
-            );
-
-            PlayerPrefs.Save();
-
             waitingForKey = false;
 
-            statusText =
-                "Keybind reset.";
+            SaveSettings();
+
+            AddNotification(
+                "Keybind reset."
+            );
         }
     }
 
-    // =========================
+    // =========================================================
     // COSMETICS
-    // =========================
+    // =========================================================
 
     private void DrawCosmeticsTab()
     {
@@ -1009,7 +1108,7 @@ public class JelloMenuUI : MonoBehaviour
             titleStyle
         );
 
-        GUILayout.Space(10);
+        GUILayout.Space(8);
 
         if (cosmeticsWarning)
         {
@@ -1018,13 +1117,12 @@ public class JelloMenuUI : MonoBehaviour
             );
 
             GUILayout.Label(
-                "Cosmetic preview/equipment is limited to cosmetics your installation legitimately has access to.",
-                labelStyle
+                "Cosmetic controls here are a local browser UI. Equipment is only applied through supported game APIs.",
+                smallStyle
             );
 
             if (GUILayout.Button(
-                "Dismiss",
-                GUILayout.Height(28)
+                "Dismiss"
             ))
             {
                 cosmeticsWarning = false;
@@ -1033,42 +1131,65 @@ public class JelloMenuUI : MonoBehaviour
             GUILayout.EndVertical();
         }
 
-        GUILayout.Space(10);
+        GUILayout.Space(6);
+
+        GUILayout.BeginHorizontal();
+
+        for (int i = 0;
+             i < cosmeticCategories.Length;
+             i++)
+        {
+            if (GUILayout.Button(
+                cosmeticCategories[i],
+                GUILayout.Height(30)
+            ))
+            {
+                cosmeticCategory = i;
+            }
+        }
+
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(8);
 
         GUILayout.Label(
-            "Cosmetic browser",
-            labelStyle
+            cosmeticCategories[
+                cosmeticCategory
+            ],
+            titleStyle
         );
 
-        GUILayout.Label(
-            "Hats",
-            labelStyle
+        GUILayout.BeginScrollView(
+            Vector2.zero,
+            GUILayout.Height(260)
         );
 
-        GUILayout.Label(
-            "Skins",
-            labelStyle
-        );
+        for (int i = 0;
+             i < cosmeticItems.Length;
+             i++)
+        {
+            if (GUILayout.Button(
+                cosmeticItems[i],
+                GUILayout.Height(34)
+            ))
+            {
+                statusText =
+                    "Selected " +
+                    cosmeticItems[i];
 
-        GUILayout.Label(
-            "Pets",
-            labelStyle
-        );
+                AddNotification(
+                    "Selected: " +
+                    cosmeticItems[i]
+                );
+            }
+        }
 
-        GUILayout.Label(
-            "Visors",
-            labelStyle
-        );
-
-        GUILayout.Label(
-            "Nameplates",
-            labelStyle
-        );
+        GUILayout.EndScrollView();
     }
 
-    // =========================
-    // HOST
-    // =========================
+    // =========================================================
+    // HOST TAB
+    // =========================================================
 
     private void DrawHostTab()
     {
@@ -1077,48 +1198,278 @@ public class JelloMenuUI : MonoBehaviour
             titleStyle
         );
 
-        GUILayout.Space(10);
+        GUILayout.Space(6);
 
+        GUILayout.BeginHorizontal();
+
+        for (int i = 0;
+             i < hostSections.Length;
+             i++)
+        {
+            if (GUILayout.Button(
+                hostSections[i],
+                GUILayout.Height(30)
+            ))
+            {
+                hostSection = i;
+            }
+        }
+
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(8);
+
+        switch (hostSection)
+        {
+            case 0:
+                DrawHostOverview();
+                break;
+
+            case 1:
+                DrawHostPlayers();
+                break;
+
+            case 2:
+                DrawHostLobby();
+                break;
+
+            case 3:
+                DrawHostPresets();
+                break;
+        }
+
+        if (hostConfirmation)
+            DrawHostConfirmation();
+    }
+
+    // =========================================================
+    // HOST OVERVIEW
+    // =========================================================
+
+    private void DrawHostOverview()
+    {
         GUILayout.BeginVertical(
             GUI.skin.box
         );
 
         GUILayout.Label(
             "Host controls",
-            labelStyle
+            titleStyle
         );
 
         GUILayout.Label(
-            "Game-state controls should use the game's supported networking APIs.",
-            labelStyle
+            "These controls are UI hooks until the exact game networking API is connected.",
+            smallStyle
         );
 
         GUILayout.EndVertical();
 
-        GUILayout.Space(10);
-
         if (GUILayout.Button(
-            "Player Management",
-            GUILayout.Height(35)
+            "Refresh Host State",
+            GUILayout.Height(34)
         ))
         {
-            statusText =
-                "Host player management.";
-        }
-
-        if (GUILayout.Button(
-            "Commands",
-            GUILayout.Height(35)
-        ))
-        {
-            statusText =
-                "Host commands selected.";
+            AddNotification(
+                "Host state refreshed."
+            );
         }
     }
 
-    // =========================
+    // =========================================================
+    // HOST PLAYERS
+    // =========================================================
+
+    private void DrawHostPlayers()
+    {
+        GUILayout.Label(
+            "Player Management",
+            labelStyle
+        );
+
+        for (int i = 0;
+             i < players.Count;
+             i++)
+        {
+            PlayerDisplayData player =
+                players[i];
+
+            GUILayout.BeginHorizontal(
+                GUI.skin.box
+            );
+
+            GUILayout.Label(
+                player.Name,
+                smallStyle
+            );
+
+            if (GUILayout.Button(
+                "Kick",
+                GUILayout.Width(65)
+            ))
+            {
+                AskHostAction(
+                    "Kick " +
+                    player.Name
+                );
+            }
+
+            if (GUILayout.Button(
+                "Ban",
+                GUILayout.Width(65)
+            ))
+            {
+                AskHostAction(
+                    "Ban " +
+                    player.Name
+                );
+            }
+
+            GUILayout.EndHorizontal();
+        }
+    }
+
+    // =========================================================
+    // HOST LOBBY
+    // =========================================================
+
+    private void DrawHostLobby()
+    {
+        GUILayout.Label(
+            "Lobby",
+            titleStyle
+        );
+
+        if (GUILayout.Button(
+            "Start Game",
+            GUILayout.Height(36)
+        ))
+        {
+            AskHostAction(
+                "Start Game"
+            );
+        }
+
+        if (GUILayout.Button(
+            "Return To Lobby",
+            GUILayout.Height(36)
+        ))
+        {
+            AskHostAction(
+                "Return To Lobby"
+            );
+        }
+
+        if (GUILayout.Button(
+            "Refresh Lobby",
+            GUILayout.Height(36)
+        ))
+        {
+            AddNotification(
+                "Lobby refreshed."
+            );
+        }
+    }
+
+    // =========================================================
+    // HOST PRESETS
+    // =========================================================
+
+    private void DrawHostPresets()
+    {
+        GUILayout.Label(
+            "Host Presets",
+            titleStyle
+        );
+
+        for (int i = 0;
+             i < presetNames.Length;
+             i++)
+        {
+            if (GUILayout.Button(
+                "Load " +
+                presetNames[i],
+                GUILayout.Height(32)
+            ))
+            {
+                LoadPreset(i);
+            }
+        }
+
+        if (GUILayout.Button(
+            "Save Current Preset",
+            GUILayout.Height(32)
+        ))
+        {
+            SaveSettings();
+
+            AddNotification(
+                "Preset saved."
+            );
+        }
+    }
+
+    // =========================================================
+    // HOST CONFIRMATION
+    // =========================================================
+
+    private void AskHostAction(
+        string action)
+    {
+        pendingHostAction =
+            action;
+
+        hostConfirmation = true;
+    }
+
+    private void DrawHostConfirmation()
+    {
+        GUILayout.BeginVertical(
+            GUI.skin.box
+        );
+
+        GUILayout.Label(
+            "Confirm",
+            titleStyle
+        );
+
+        GUILayout.Label(
+            pendingHostAction,
+            labelStyle
+        );
+
+        GUILayout.BeginHorizontal();
+
+        if (GUILayout.Button(
+            "Cancel"
+        ))
+        {
+            hostConfirmation = false;
+        }
+
+        if (GUILayout.Button(
+            "Confirm"
+        ))
+        {
+            statusText =
+                pendingHostAction +
+                " requested.";
+
+            AddNotification(
+                pendingHostAction +
+                " requested."
+            );
+
+            hostConfirmation = false;
+        }
+
+        GUILayout.EndHorizontal();
+
+        GUILayout.EndVertical();
+    }
+
+    // =========================================================
     // MISC
-    // =========================
+    // =========================================================
 
     private void DrawMiscTab()
     {
@@ -1127,49 +1478,90 @@ public class JelloMenuUI : MonoBehaviour
             titleStyle
         );
 
-        GUILayout.Space(10);
+        GUILayout.Space(8);
 
         GUILayout.Label(
             statusText,
             labelStyle
         );
 
+        notificationsEnabled =
+            GUILayout.Toggle(
+                notificationsEnabled,
+                "Notifications"
+            );
+
+        debugInfo =
+            GUILayout.Toggle(
+                debugInfo,
+                "Debug Information"
+            );
+
+        GUILayout.Space(8);
+
         if (GUILayout.Button(
-            "Test Button",
-            GUILayout.Height(40)
+            "Save Settings"
         ))
         {
-            statusText =
-                "Button works!";
+            SaveSettings();
 
-            Debug.Log(
-                "[Jello] Test Button Works!"
+            AddNotification(
+                "Settings saved."
             );
         }
 
         if (GUILayout.Button(
-            "Reset Everything",
-            GUILayout.Height(35)
+            "Reset Everything"
         ))
         {
-            ResetHUD();
+            ResetEverything();
 
-            menuOpacity = 1f;
-            uiScale = 1f;
-            backgroundTransparency =
-                0.15f;
+            AddNotification(
+                "Settings reset."
+            );
+        }
 
-            animationSpeed = 8f;
-            animationsEnabled = true;
+        if (debugInfo)
+        {
+            GUILayout.Space(8);
 
-            statusText =
-                "Jello settings reset.";
+            GUILayout.BeginVertical(
+                GUI.skin.box
+            );
+
+            GUILayout.Label(
+                "FPS: " +
+                fps.ToString("0.0"),
+                smallStyle
+            );
+
+            GUILayout.Label(
+                "Screen: " +
+                Screen.width +
+                "x" +
+                Screen.height,
+                smallStyle
+            );
+
+            GUILayout.Label(
+                "Tab: " +
+                tabs[currentTab],
+                smallStyle
+            );
+
+            GUILayout.Label(
+                "Animation: " +
+                menuAnimation.ToString("0.00"),
+                smallStyle
+            );
+
+            GUILayout.EndVertical();
         }
     }
 
-    // =========================
+    // =========================================================
     // ABOUT
-    // =========================
+    // =========================================================
 
     private void DrawAboutTab()
     {
@@ -1182,87 +1574,97 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Label(
             "Jello",
+            titleStyle
+        );
+
+        GUILayout.Label(
+            "Version 1.1.0",
+            labelStyle
+        );
+
+        GUILayout.Space(12);
+
+        GUILayout.Label(
+            "One-file QOL menu.",
             labelStyle
         );
 
         GUILayout.Label(
-            "Version 1.0.0",
+            "Status: " + statusText,
+            smallStyle
+        );
+
+        GUILayout.Space(12);
+
+        GUILayout.Label(
+            "Features currently implemented:",
             labelStyle
         );
 
-        GUILayout.Space(10);
-
         GUILayout.Label(
-            "QOL menu for Among Us.",
-            labelStyle
+            "• Animated UI",
+            smallStyle
         );
 
         GUILayout.Label(
-            statusText,
-            labelStyle
+            "• HUD customization",
+            smallStyle
+        );
+
+        GUILayout.Label(
+            "• FPS history",
+            smallStyle
+        );
+
+        GUILayout.Label(
+            "• Player filtering",
+            smallStyle
+        );
+
+        GUILayout.Label(
+            "• Idle tracking framework",
+            smallStyle
+        );
+
+        GUILayout.Label(
+            "• Themes",
+            smallStyle
+        );
+
+        GUILayout.Label(
+            "• Persistent settings",
+            smallStyle
+        );
+
+        GUILayout.Label(
+            "• Host management UI",
+            smallStyle
         );
     }
 
-    // =========================
-    // WINDOW BACKGROUND
-    // =========================
-
-    private void DrawWindowBackground()
-    {
-        Color oldColor =
-            GUI.color;
-
-        Color color =
-            backgroundColor;
-
-        color.a =
-            1f - backgroundTransparency;
-
-        GUI.color =
-            color;
-
-        GUI.Box(
-            new Rect(
-                0,
-                0,
-                window.width,
-                window.height
-            ),
-            GUIContent.none
-        );
-
-        GUI.color =
-            oldColor;
-    }
-
-    // =========================
-    // HUD
-    // =========================
+    // =========================================================
+    // HUD DRAW
+    // =========================================================
 
     private void DrawHUD()
     {
         if (!hudEnabled)
             return;
 
+        Color old =
+            GUI.color;
+
+        GUI.color =
+            hudColor;
+
         if (showFPS)
         {
-            GUI.color =
-                GetFPSColor();
-
             GUI.Label(
                 fpsRect,
-                $"FPS: {fps:0}",
+                "FPS: " +
+                fps.ToString("0"),
                 hudStyle
             );
-
-            GUI.color =
-                Color.white;
-
-            if (hudEditMode)
-                GUI.Box(
-                    fpsRect,
-                    ""
-                );
         }
 
         if (showClock)
@@ -1285,7 +1687,10 @@ public class JelloMenuUI : MonoBehaviour
 
             GUI.Label(
                 runtimeRect,
-                $"Runtime: {runtime:hh\\:mm\\:ss}",
+                "Runtime: " +
+                runtime.ToString(
+                    @"hh\:mm\:ss"
+                ),
                 hudStyle
             );
         }
@@ -1294,41 +1699,207 @@ public class JelloMenuUI : MonoBehaviour
         {
             GUI.Label(
                 resolutionRect,
-                $"Resolution: {Screen.width}x{Screen.height}",
+                "Resolution: " +
+                Screen.width +
+                "x" +
+                Screen.height,
                 hudStyle
             );
         }
 
-        if (hudEditMode &&
-            Event.current != null &&
-            Event.current.type ==
-            EventType.MouseDrag &&
-            Event.current.button == 0)
+        if (showFPSGraph)
+            DrawFPSGraph();
+
+        if (showStatus)
         {
-            Vector2 mouse =
-                Event.current.mousePosition;
+            GUI.Label(
+                new Rect(
+                    15,
+                    215,
+                    350,
+                    28
+                ),
+                statusText,
+                hudStyle
+            );
+        }
 
-            if (fpsRect.Contains(mouse))
-                fpsRect.position +=
-                    Event.current.delta;
+        GUI.color = old;
+    }
 
-            else if (clockRect.Contains(mouse))
-                clockRect.position +=
-                    Event.current.delta;
+    // =========================================================
+    // FPS GRAPH
+    // =========================================================
 
-            else if (runtimeRect.Contains(mouse))
-                runtimeRect.position +=
-                    Event.current.delta;
+    private void DrawFPSGraph()
+    {
+        GUI.Box(
+            graphRect,
+            "FPS"
+        );
 
-            else if (resolutionRect.Contains(mouse))
-                resolutionRect.position +=
-                    Event.current.delta;
+        float max =
+            Mathf.Max(
+                120f,
+                fpsWarning
+            );
+
+        for (int i = 0;
+             i < fpsHistory.Length - 1;
+             i++)
+        {
+            int a =
+                (fpsHistoryIndex +
+                 i) %
+                fpsHistory.Length;
+
+            int b =
+                (fpsHistoryIndex +
+                 i + 1) %
+                fpsHistory.Length;
+
+            float y1 =
+                Mathf.Lerp(
+                    graphRect.yMax - 8,
+                    graphRect.y + 8,
+                    Mathf.Clamp01(
+                        fpsHistory[a] /
+                        max
+                    )
+                );
+
+            float y2 =
+                Mathf.Lerp(
+                    graphRect.yMax - 8,
+                    graphRect.y + 8,
+                    Mathf.Clamp01(
+                        fpsHistory[b] /
+                        max
+                    )
+                );
+
+            DrawLine(
+                new Vector2(
+                    graphRect.x +
+                    i *
+                    graphRect.width /
+                    fpsHistory.Length,
+                    y1
+                ),
+                new Vector2(
+                    graphRect.x +
+                    (i + 1) *
+                    graphRect.width /
+                    fpsHistory.Length,
+                    y2
+                ),
+                GetFPSColor(),
+                2f
+            );
         }
     }
 
-    // =========================
-    // PLAYER DATA
-    // =========================
+    // =========================================================
+    // PLAYER OVERLAY
+    // =========================================================
+
+    private void DrawPlayersOverlay()
+    {
+        Rect rect =
+            new Rect(
+                15,
+                270,
+                300,
+                260
+            );
+
+        GUI.Box(
+            rect,
+            "Players"
+        );
+
+        GUILayout.BeginArea(
+            new Rect(
+                rect.x + 10,
+                rect.y + 30,
+                rect.width - 20,
+                rect.height - 40
+            )
+        );
+
+        for (int i = 0;
+             i < players.Count;
+             i++)
+        {
+            PlayerDisplayData p =
+                players[i];
+
+            GUILayout.Label(
+                p.Name +
+                " | " +
+                p.Color +
+                " | " +
+                FormatTime(
+                    p.IdleTime
+                ),
+                smallStyle
+            );
+        }
+
+        GUILayout.EndArea();
+    }
+
+    // =========================================================
+    // NOTIFICATIONS
+    // =========================================================
+
+    private void AddNotification(
+        string text)
+    {
+        statusText = text;
+
+        if (!notificationsEnabled)
+            return;
+
+        notifications.Add(text);
+
+        while (notifications.Count > 4)
+            notifications.RemoveAt(0);
+
+        notificationTimer = 3f;
+    }
+
+    private void DrawNotifications()
+    {
+        if (!notificationsEnabled)
+            return;
+
+        if (notificationTimer <= 0f)
+            return;
+
+        float y = 20f;
+
+        for (int i = notifications.Count - 1;
+             i >= 0;
+             i--)
+        {
+            GUI.Box(
+                new Rect(
+                    Screen.width - 330,
+                    y,
+                    310,
+                    30
+                ),
+                notifications[i]
+            );
+
+            y += 34f;
+        }
+    }
+
+    // =========================================================
+    // PLAYERS
+    // =========================================================
 
     private void BuildDemoPlayerList()
     {
@@ -1339,19 +1910,234 @@ public class JelloMenuUI : MonoBehaviour
                 "Player",
                 "Unknown",
                 "Unknown",
-                "Unknown"
+                "Active"
             )
         );
     }
 
     private void RefreshPlayers()
     {
-        BuildDemoPlayerList();
+        /*
+         * API-INDEPENDENT PLACEHOLDER.
+         *
+         * Replace this with PlayerControl/GameData
+         * integration once the exact Among Us build
+         * is identified.
+         */
+
+        if (players.Count == 0)
+            BuildDemoPlayerList();
+
+        foreach (
+            PlayerDisplayData player
+            in players)
+        {
+            player.LastUpdate =
+                Time.unscaledTime;
+        }
     }
 
-    // =========================
-    // RESET HUD
-    // =========================
+    private void UpdatePlayers()
+    {
+        playerRefreshTimer +=
+            Time.unscaledDeltaTime;
+
+        if (playerRefreshTimer < 1f)
+            return;
+
+        playerRefreshTimer = 0f;
+
+        foreach (
+            PlayerDisplayData player
+            in players)
+        {
+            /*
+             * This framework tracks inactivity.
+             *
+             * Real movement/interactions should be
+             * connected to the game's PlayerControl
+             * API for your exact build.
+             */
+
+            if (Time.unscaledTime -
+                player.LastUpdate >
+                90f)
+            {
+                player.Status =
+                    "Idle";
+            }
+            else
+            {
+                player.Status =
+                    "Active";
+            }
+
+            player.IdleTime =
+                Time.unscaledTime -
+                player.LastUpdate;
+        }
+
+        if (sortPlayers)
+        {
+            players.Sort(
+                delegate (
+                    PlayerDisplayData a,
+                    PlayerDisplayData b)
+                {
+                    return string.Compare(
+                        a.Name,
+                        b.Name,
+                        StringComparison.OrdinalIgnoreCase
+                    );
+                }
+            );
+        }
+    }
+
+    // =========================================================
+    // THEMES
+    // =========================================================
+
+    private void ApplyTheme(int value)
+    {
+        theme = value;
+
+        switch (value)
+        {
+            case 0:
+                backgroundColor =
+                    new Color(
+                        0.04f,
+                        0.06f,
+                        0.05f
+                    );
+
+                accentColor =
+                    new Color(
+                        0.25f,
+                        1f,
+                        0.5f
+                    );
+                break;
+
+            case 1:
+                backgroundColor =
+                    new Color(
+                        0.03f,
+                        0.08f,
+                        0.10f
+                    );
+
+                accentColor =
+                    Color.cyan;
+                break;
+
+            case 2:
+                backgroundColor =
+                    new Color(
+                        0.08f,
+                        0.04f,
+                        0.12f
+                    );
+
+                accentColor =
+                    new Color(
+                        0.7f,
+                        0.3f,
+                        1f
+                    );
+                break;
+
+            case 3:
+                backgroundColor =
+                    new Color(
+                        0.12f,
+                        0.035f,
+                        0.035f
+                    );
+
+                accentColor =
+                    Color.red;
+                break;
+
+            case 4:
+                backgroundColor =
+                    new Color(
+                        0.025f,
+                        0.025f,
+                        0.025f
+                    );
+
+                accentColor =
+                    Color.white;
+                break;
+        }
+
+        SaveSettings();
+
+        AddNotification(
+            "Theme changed."
+        );
+    }
+
+    // =========================================================
+    // WINDOW BACKGROUND
+    // =========================================================
+
+    private void DrawWindowBackground()
+    {
+        Color old =
+            GUI.color;
+
+        Color color =
+            backgroundColor;
+
+        color.a =
+            1f -
+            backgroundTransparency;
+
+        GUI.color = color;
+
+        GUI.Box(
+            new Rect(
+                0,
+                0,
+                window.width,
+                window.height
+            ),
+            GUIContent.none
+        );
+
+        GUI.color = old;
+    }
+
+    // =========================================================
+    // HUD MOVEMENT
+    // =========================================================
+
+    private void MoveHUD(
+        float x,
+        float y)
+    {
+        fpsRect.position +=
+            new Vector2(x, y);
+
+        clockRect.position +=
+            new Vector2(x, y);
+
+        runtimeRect.position +=
+            new Vector2(x, y);
+
+        resolutionRect.position +=
+            new Vector2(x, y);
+
+        graphRect.position +=
+            new Vector2(x, y);
+    }
+
+    // =========================================================
+    // RESET
+    // =========================================================
 
     private void ResetHUD()
     {
@@ -1386,28 +2172,264 @@ public class JelloMenuUI : MonoBehaviour
                 250,
                 30
             );
+
+        graphRect =
+            new Rect(
+                15,
+                140,
+                220,
+                70
+            );
     }
 
-    // =========================
-    // FPS COLOR
-    // =========================
+    private void ResetEverything()
+    {
+        menuOpacity = 1f;
+
+        uiScale = 1f;
+
+        backgroundTransparency = 0f;
+
+        animationSpeed = 8f;
+
+        animationsEnabled = true;
+
+        compactMode = false;
+
+        theme = 0;
+
+        backgroundColor =
+            new Color(
+                0.04f,
+                0.045f,
+                0.06f,
+                1f
+            );
+
+        accentColor =
+            new Color(
+                0.25f,
+                1f,
+                0.5f,
+                1f
+            );
+
+        hudColor = Color.white;
+
+        fpsWarning = 30f;
+
+        ResetHUD();
+
+        SaveSettings();
+    }
+
+    // =========================================================
+    // SETTINGS
+    // =========================================================
+
+    private void SaveSettings()
+    {
+        PlayerPrefs.SetString(
+            "Jello_MenuKey",
+            menuKey.ToString()
+        );
+
+        PlayerPrefs.SetFloat(
+            "Jello_Opacity",
+            menuOpacity
+        );
+
+        PlayerPrefs.SetFloat(
+            "Jello_Scale",
+            uiScale
+        );
+
+        PlayerPrefs.SetFloat(
+            "Jello_Transparency",
+            backgroundTransparency
+        );
+
+        PlayerPrefs.SetFloat(
+            "Jello_AnimationSpeed",
+            animationSpeed
+        );
+
+        PlayerPrefs.SetInt(
+            "Jello_Animations",
+            animationsEnabled ? 1 : 0
+        );
+
+        PlayerPrefs.SetInt(
+            "Jello_Theme",
+            theme
+        );
+
+        PlayerPrefs.Save();
+    }
+
+    private void LoadSettings()
+    {
+        string savedKey =
+            PlayerPrefs.GetString(
+                "Jello_MenuKey",
+                "Delete"
+            );
+
+        KeyCode loaded;
+
+        if (Enum.TryParse(
+            savedKey,
+            out loaded))
+        {
+            menuKey = loaded;
+        }
+
+        menuOpacity =
+            PlayerPrefs.GetFloat(
+                "Jello_Opacity",
+                1f
+            );
+
+        uiScale =
+            PlayerPrefs.GetFloat(
+                "Jello_Scale",
+                1f
+            );
+
+        backgroundTransparency =
+            PlayerPrefs.GetFloat(
+                "Jello_Transparency",
+                0f
+            );
+
+        animationSpeed =
+            PlayerPrefs.GetFloat(
+                "Jello_AnimationSpeed",
+                8f
+            );
+
+        animationsEnabled =
+            PlayerPrefs.GetInt(
+                "Jello_Animations",
+                1
+            ) == 1;
+
+        theme =
+            PlayerPrefs.GetInt(
+                "Jello_Theme",
+                0
+            );
+
+        ApplyThemeSilent(theme);
+    }
+
+    private void ApplyThemeSilent(int value)
+    {
+        switch (value)
+        {
+            case 1:
+                backgroundColor =
+                    new Color(
+                        0.03f,
+                        0.08f,
+                        0.10f
+                    );
+
+                accentColor =
+                    Color.cyan;
+                break;
+
+            case 2:
+                backgroundColor =
+                    new Color(
+                        0.08f,
+                        0.04f,
+                        0.12f
+                    );
+
+                accentColor =
+                    new Color(
+                        0.7f,
+                        0.3f,
+                        1f
+                    );
+                break;
+
+            case 3:
+                backgroundColor =
+                    new Color(
+                        0.12f,
+                        0.035f,
+                        0.035f
+                    );
+
+                accentColor =
+                    Color.red;
+                break;
+
+            case 4:
+                backgroundColor =
+                    new Color(
+                        0.025f,
+                        0.025f,
+                        0.025f
+                    );
+
+                accentColor =
+                    Color.white;
+                break;
+
+            default:
+                backgroundColor =
+                    new Color(
+                        0.04f,
+                        0.06f,
+                        0.05f
+                    );
+
+                accentColor =
+                    new Color(
+                        0.25f,
+                        1f,
+                        0.5f
+                    );
+                break;
+        }
+    }
+
+    // =========================================================
+    // UTILITY
+    // =========================================================
+
+    private string FormatTime(float seconds)
+    {
+        TimeSpan time =
+            TimeSpan.FromSeconds(
+                Mathf.Max(
+                    0f,
+                    seconds
+                )
+            );
+
+        return time.ToString(
+            @"mm\:ss"
+        );
+    }
 
     private Color GetFPSColor()
     {
         if (fps >= fpsWarning)
             return Color.green;
 
-        if (fps >= fpsWarning * 0.66f)
+        if (fps >=
+            fpsWarning * 0.66f)
             return Color.yellow;
 
         return Color.red;
     }
 
-    // =========================
-    // EASING
-    // =========================
-
-    private float EaseOutCubic(float value)
+    private float EaseOutCubic(
+        float value)
     {
         value =
             Mathf.Clamp01(value);
@@ -1419,9 +2441,62 @@ public class JelloMenuUI : MonoBehaviour
             );
     }
 
-    // =========================
+    // =========================================================
+    // LINE DRAWING
+    // =========================================================
+
+    private void DrawLine(
+        Vector2 start,
+        Vector2 end,
+        Color color,
+        float width)
+    {
+        Color old =
+            GUI.color;
+
+        GUI.color = color;
+
+        Matrix4x4 matrix =
+            GUI.matrix;
+
+        float angle =
+            Vector3.Angle(
+                end - start,
+                Vector2.right
+            );
+
+        if (start.y > end.y)
+            angle = -angle;
+
+        float length =
+            Vector2.Distance(
+                start,
+                end
+            );
+
+        GUIUtility.RotateAroundPivot(
+            angle,
+            start
+        );
+
+        GUI.DrawTexture(
+            new Rect(
+                start.x,
+                start.y,
+                length,
+                width
+            ),
+            Texture2D.whiteTexture
+        );
+
+        GUI.matrix = matrix;
+
+        GUI.color = old;
+    }
+
+    // =========================================================
     // STYLES
-    // =========================
+    // =========================================================
 
     private void CreateStyles()
     {
@@ -1431,47 +2506,50 @@ public class JelloMenuUI : MonoBehaviour
         titleStyle =
             new GUIStyle(
                 GUI.skin.label
-            )
-            {
-                fontSize = 20,
-                fontStyle =
-                    FontStyle.Bold,
-                alignment =
-                    TextAnchor.MiddleCenter
-            };
+            );
+
+        titleStyle.fontSize = 20;
+        titleStyle.fontStyle =
+            FontStyle.Bold;
+        titleStyle.alignment =
+            TextAnchor.MiddleCenter;
 
         labelStyle =
             new GUIStyle(
                 GUI.skin.label
-            )
-            {
-                fontSize = 14,
-                alignment =
-                    TextAnchor.MiddleCenter
-            };
+            );
+
+        labelStyle.fontSize = 14;
+        labelStyle.alignment =
+            TextAnchor.MiddleCenter;
 
         hudStyle =
             new GUIStyle(
                 GUI.skin.label
-            )
-            {
-                fontSize = 16,
-                fontStyle =
-                    FontStyle.Bold
-            };
+            );
 
-        buttonStyle =
+        hudStyle.fontSize = 16;
+        hudStyle.fontStyle =
+            FontStyle.Bold;
+
+        smallStyle =
             new GUIStyle(
-                GUI.skin.button
-            )
-            {
-                fontSize = 14
-            };
+                GUI.skin.label
+            );
+
+        smallStyle.fontSize = 12;
+        smallStyle.alignment =
+            TextAnchor.MiddleCenter;
+
+        boxStyle =
+            new GUIStyle(
+                GUI.skin.box
+            );
     }
 
-    // =========================
-    // PLAYER DATA CLASS
-    // =========================
+    // =========================================================
+    // PLAYER DATA
+    // =========================================================
 
     private class PlayerDisplayData
     {
@@ -1479,6 +2557,9 @@ public class JelloMenuUI : MonoBehaviour
         public string Color;
         public string Device;
         public string Status;
+
+        public float LastUpdate;
+        public float IdleTime;
 
         public PlayerDisplayData(
             string name,
@@ -1490,6 +2571,11 @@ public class JelloMenuUI : MonoBehaviour
             Color = color;
             Device = device;
             Status = status;
+
+            LastUpdate =
+                Time.unscaledTime;
+
+            IdleTime = 0f;
         }
     }
 }
