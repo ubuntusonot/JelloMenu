@@ -23,7 +23,7 @@ public class JelloMenuUI : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F4))
+        if (Input.GetKeyDown(KeyCode.Delete))
         {
             menuOpen = !menuOpen;
         }
