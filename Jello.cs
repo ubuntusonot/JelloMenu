@@ -5,66 +5,110 @@ using UnityEngine;
 [BepInPlugin("org.vinegar.gfr", "Jello", "1.0.0")]
 public class QOLMenuPlugin : BasePlugin
 {
-    private bool menuOpen;
-
     public override void Load()
     {
         Log.LogInfo("Do You Even Read The Logs?");
 
-        AddComponent<QOLMenuUI>();
+        AddComponent<JelloMenuUI>();
+    }
+}
+
+public class JelloMenuUI : MonoBehaviour
+{
+    private bool menuOpen = false;
+
+    private Rect window = new Rect(250, 150, 420, 280);
+
+    private GUIStyle titleStyle;
+    private GUIStyle buttonStyle;
+    private GUIStyle labelStyle;
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F4))
+        {
+            menuOpen = !menuOpen;
+        }
     }
 
-    private class QOLMenuUI : MonoBehaviour
+    private void OnGUI()
     {
-        private bool open;
-        private Rect window = new Rect(250, 150, 400, 300);
+        if (!menuOpen)
+            return;
 
-        private void Update()
+        CreateStyles();
+
+        window = GUI.Window(
+            12345,
+            window,
+            DrawWindow,
+            "Jello"
+        );
+    }
+
+    private void CreateStyles()
+    {
+        if (titleStyle != null)
+            return;
+
+        titleStyle = new GUIStyle(GUI.skin.label)
         {
-            if (Input.GetKeyDown(KeyCode.F4))
-                open = !open;
+            fontSize = 24,
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.MiddleCenter
+        };
+
+        labelStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 14,
+            alignment = TextAnchor.MiddleCenter
+        };
+
+        buttonStyle = new GUIStyle(GUI.skin.button)
+        {
+            fontSize = 14
+        };
+    }
+
+    private void DrawWindow(int id)
+    {
+        // Title
+        GUI.Label(
+            new Rect(20, 35, 380, 40),
+            "JELLO",
+            titleStyle
+        );
+
+        // Status
+        GUI.Label(
+            new Rect(20, 75, 380, 25),
+            "QOL Menu Loaded",
+            labelStyle
+        );
+
+        // Test button
+        if (GUI.Button(
+            new Rect(40, 115, 340, 40),
+            "Test Button",
+            buttonStyle
+        ))
+        {
+            Debug.Log("Smart Looking At Logs");
         }
 
-        private void OnGUI()
+        // Close button
+        if (GUI.Button(
+            new Rect(40, 170, 340, 40),
+            "Close Menu",
+            buttonStyle
+        ))
         {
-            if (!open)
-                return;
-
-            window = GUI.Window(
-                12345,
-                window,
-                DrawMenu,
-                "Jello"
-            );
+            menuOpen = false;
         }
 
-        private void DrawMenu(int id)
-        {
-            GUILayout.Space(15);
-
-            GUILayout.Label(
-                "Jello",
-                new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = 22,
-                    fontStyle = FontStyle.Bold,
-                    alignment = TextAnchor.MiddleCenter
-                }
-            );
-
-            GUILayout.Space(20);
-
-            if (GUILayout.Button("Test Button", GUILayout.Height(40)))
-            {
-                Debug.Log("Smart Looking At Logs");
-            }
-
-            GUILayout.Space(10);
-
-            if (GUILayout.Button("Close", GUILayout.Height(35)))
-                open = false;
-
-            GUI.DragWindow();
-        }
+        // Drag window from the top
+        GUI.DragWindow(
+            new Rect(0, 0, window.width, 30)
+        );
     }
 }
