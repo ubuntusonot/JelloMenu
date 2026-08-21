@@ -21,6 +21,10 @@
       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
 
+    <Reference Include="Assembly-CSharp">
+       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/Assembly-CSharp.dll</HintPath>
+    </Reference>
+
     <Reference Include="BepInEx.Unity.IL2CPP">
       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/core/BepInEx.Unity.IL2CPP.dll</HintPath>
     </Reference>
