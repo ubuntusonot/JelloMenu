@@ -16,8 +16,11 @@ public class QOLMenuPlugin : BasePlugin
 public class JelloMenuUI : MonoBehaviour
 {
     private bool menuOpen = false;
+    private bool waitingForKey = false;
 
-    private Rect window = new Rect(250, 150, 440, 340);
+    private KeyCode menuKey = KeyCode.Delete;
+
+    private Rect window = new Rect(250, 150, 440, 400);
 
     private GUIStyle? titleStyle;
     private GUIStyle? buttonStyle;
@@ -25,7 +28,7 @@ public class JelloMenuUI : MonoBehaviour
 
     private string statusText = "Jello Loaded";
 
-    // Features
+    // HUD features
     private bool showFPS = true;
     private bool showClock = true;
     private bool hudEditMode = false;
@@ -39,13 +42,25 @@ public class JelloMenuUI : MonoBehaviour
     private float fpsTimer = 0f;
     private int fpsFrames = 0;
 
-    // Editable HUD positions
+    // HUD positions
     private Rect fpsRect = new Rect(15, 15, 180, 30);
     private Rect clockRect = new Rect(15, 45, 180, 30);
 
+    private void Start()
+    {
+        // Load saved keybind.
+        string savedKey = PlayerPrefs.GetString(
+            "Jello_MenuKey",
+            "F4"
+        );
+
+        if (Enum.TryParse(savedKey, out KeyCode loadedKey))
+            menuKey = loadedKey;
+    }
+
     private void Update()
     {
-        // FPS calculation
+        // FPS calculation.
         fpsFrames++;
         fpsTimer += Time.unscaledDeltaTime;
 
@@ -59,18 +74,21 @@ public class JelloMenuUI : MonoBehaviour
 
     private void OnGUI()
     {
-        if (Event.current != null &&
+        // Menu keybind.
+        if (!waitingForKey &&
+            Event.current != null &&
             Event.current.type == EventType.KeyDown &&
-            Event.current.keyCode == KeyCode.F4)
+            Event.current.keyCode == menuKey)
         {
             menuOpen = !menuOpen;
 
-            Debug.Log("[Jello] F4 pressed! Menu = " + menuOpen);
+            Debug.Log(
+                "[Jello] Menu = " + menuOpen
+            );
 
             Event.current.Use();
         }
 
-        // Draw HUD even when menu is closed.
         DrawHUD();
 
         if (!menuOpen)
@@ -79,6 +97,7 @@ public class JelloMenuUI : MonoBehaviour
         CreateStyles();
 
         Color oldColor = GUI.color;
+        Matrix4x4 oldMatrix = GUI.matrix;
 
         GUI.color = new Color(
             1f,
@@ -87,12 +106,14 @@ public class JelloMenuUI : MonoBehaviour
             menuOpacity
         );
 
-        Matrix4x4 oldMatrix = GUI.matrix;
-
         GUI.matrix = Matrix4x4.TRS(
             Vector3.zero,
             Quaternion.identity,
-            new Vector3(uiScale, uiScale, 1f)
+            new Vector3(
+                uiScale,
+                uiScale,
+                1f
+            )
         );
 
         window = GUI.Window(
@@ -130,24 +151,23 @@ public class JelloMenuUI : MonoBehaviour
                 GUI.Box(clockRect, "");
         }
 
-        // HUD editor dragging
-        if (hudEditMode && Event.current != null)
+        // Allow HUD elements to be dragged.
+        if (hudEditMode &&
+            Event.current != null &&
+            Event.current.type == EventType.MouseDrag &&
+            Event.current.button == 0)
         {
-            if (Event.current.type == EventType.MouseDrag &&
-                Event.current.button == 0)
-            {
-                Vector2 mouse = Event.current.mousePosition;
+            Vector2 mouse = Event.current.mousePosition;
 
-                if (fpsRect.Contains(mouse))
-                {
-                    fpsRect.position += Event.current.delta;
-                    Event.current.Use();
-                }
-                else if (clockRect.Contains(mouse))
-                {
-                    clockRect.position += Event.current.delta;
-                    Event.current.Use();
-                }
+            if (fpsRect.Contains(mouse))
+            {
+                fpsRect.position += Event.current.delta;
+                Event.current.Use();
+            }
+            else if (clockRect.Contains(mouse))
+            {
+                clockRect.position += Event.current.delta;
+                Event.current.Use();
             }
         }
     }
@@ -170,19 +190,17 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Space(10);
 
-        // FPS toggle
+        // HUD toggles.
         showFPS = GUILayout.Toggle(
             showFPS,
             "Show FPS"
         );
 
-        // Clock toggle
         showClock = GUILayout.Toggle(
             showClock,
             "Show Clock"
         );
 
-        // HUD editor
         hudEditMode = GUILayout.Toggle(
             hudEditMode,
             "Edit HUD"
@@ -190,6 +208,7 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Space(10);
 
+        // Opacity.
         GUILayout.Label(
             $"Menu Opacity: {menuOpacity:0.00}",
             labelStyle
@@ -201,6 +220,7 @@ public class JelloMenuUI : MonoBehaviour
             1.0f
         );
 
+        // Scale.
         GUILayout.Label(
             $"UI Scale: {uiScale:0.00}",
             labelStyle
@@ -214,37 +234,132 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Space(10);
 
+        // Keybind section.
+        GUILayout.Label(
+            "Menu Key: " + menuKey,
+            labelStyle
+        );
+
+        if (!waitingForKey)
+        {
+            if (GUILayout.Button(
+                "Change Keybind",
+                GUILayout.Height(35)
+            ))
+            {
+                waitingForKey = true;
+                statusText = "Press a key...";
+            }
+        }
+        else
+        {
+            GUILayout.Label(
+                "Press any key...",
+                labelStyle
+            );
+
+            if (Event.current != null &&
+                Event.current.type == EventType.KeyDown)
+            {
+                KeyCode newKey = Event.current.keyCode;
+
+                if (newKey != KeyCode.None)
+                {
+                    menuKey = newKey;
+
+                    PlayerPrefs.SetString(
+                        "Jello_MenuKey",
+                        menuKey.ToString()
+                    );
+
+                    PlayerPrefs.Save();
+
+                    waitingForKey = false;
+
+                    statusText =
+                        "Keybind changed to " +
+                        menuKey;
+
+                    Event.current.Use();
+                }
+            }
+        }
+
+        if (GUILayout.Button(
+            "Reset Keybind",
+            GUILayout.Height(30)
+        ))
+        {
+            menuKey = KeyCode.F4;
+
+            PlayerPrefs.SetString(
+                "Jello_MenuKey",
+                "F4"
+            );
+
+            PlayerPrefs.Save();
+
+            waitingForKey = false;
+
+            statusText = "Keybind reset to F4.";
+        }
+
+        GUILayout.Space(10);
+
+        // Test.
         if (GUILayout.Button(
             "Test Button",
             GUILayout.Height(35)
         ))
         {
             statusText = "Button works!";
-            Debug.Log("[Jello] Test Button Works!");
+
+            Debug.Log(
+                "[Jello] Test Button Works!"
+            );
         }
 
+        // Reset HUD.
         if (GUILayout.Button(
             "Reset HUD",
             GUILayout.Height(30)
         ))
         {
-            fpsRect = new Rect(15, 15, 180, 30);
-            clockRect = new Rect(15, 45, 180, 30);
+            fpsRect = new Rect(
+                15,
+                15,
+                180,
+                30
+            );
+
+            clockRect = new Rect(
+                15,
+                45,
+                180,
+                30
+            );
 
             statusText = "HUD reset.";
         }
 
+        // Close.
         if (GUILayout.Button(
             "Close",
             GUILayout.Height(30)
         ))
         {
             menuOpen = false;
+            waitingForKey = false;
         }
 
-        // Drag window using the title area.
+        // Drag window.
         GUI.DragWindow(
-            new Rect(0, 0, window.width, 55)
+            new Rect(
+                0,
+                0,
+                window.width,
+                55
+            )
         );
     }
 
@@ -253,20 +368,26 @@ public class JelloMenuUI : MonoBehaviour
         if (titleStyle != null)
             return;
 
-        titleStyle = new GUIStyle(GUI.skin.label)
+        titleStyle = new GUIStyle(
+            GUI.skin.label
+        )
         {
             fontSize = 24,
             fontStyle = FontStyle.Bold,
             alignment = TextAnchor.MiddleCenter
         };
 
-        labelStyle = new GUIStyle(GUI.skin.label)
+        labelStyle = new GUIStyle(
+            GUI.skin.label
+        )
         {
             fontSize = 14,
             alignment = TextAnchor.MiddleCenter
         };
 
-        buttonStyle = new GUIStyle(GUI.skin.button)
+        buttonStyle = new GUIStyle(
+            GUI.skin.button
+        )
         {
             fontSize = 14
         };
