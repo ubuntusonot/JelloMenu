@@ -16,46 +16,26 @@ public class QOLMenuPlugin : BasePlugin
 
 public class JelloMenuUI : MonoBehaviour
 {
-    // =========================================================
-    // MENU
-    // =========================================================
-
     private bool menuOpen;
     private bool waitingForKey;
-
     private KeyCode menuKey = KeyCode.Delete;
 
-    private Rect window =
-        new Rect(250, 120, 650, 560);
+    private Rect window = new Rect(250, 120, 650, 560);
 
     private int currentTab;
     private int previousTab;
 
     private readonly string[] tabs =
     {
-        "HUD",
-        "Players",
-        "UI",
-        "Keybinds",
-        "Cosmetics",
-        "Host Only",
-        "Misc",
-        "About"
+        "HUD", "Players", "UI", "Keybinds",
+        "Cosmetics", "Host Only", "Misc", "About"
     };
 
-    // =========================================================
-    // STYLES
-    // =========================================================
-
-    private GUIStyle titleStyle;
-    private GUIStyle labelStyle;
-    private GUIStyle hudStyle;
-    private GUIStyle smallStyle;
-    private GUIStyle boxStyle;
-
-    // =========================================================
-    // STATUS / NOTIFICATIONS
-    // =========================================================
+    private GUIStyle titleStyle = null!;
+    private GUIStyle labelStyle = null!;
+    private GUIStyle hudStyle = null!;
+    private GUIStyle smallStyle = null!;
+    private GUIStyle boxStyle = null!;
 
     private string statusText = "Jello Loaded";
 
@@ -64,28 +44,15 @@ public class JelloMenuUI : MonoBehaviour
 
     private float notificationTimer;
 
-    // =========================================================
-    // ANIMATION
-    // =========================================================
-
     private bool animationsEnabled = true;
-
     private float animationSpeed = 8f;
-
     private float menuAnimation;
     private float targetMenuAnimation;
-
     private float tabAnimation = 1f;
 
-    private float[] tabHover =
-        new float[8];
-
-    // =========================================================
-    // UI
-    // =========================================================
+    private readonly float[] tabHover = new float[8];
 
     private float menuOpacity = 1f;
-
     private float uiScale = 1f;
 
     private Color backgroundColor =
@@ -95,13 +62,9 @@ public class JelloMenuUI : MonoBehaviour
         new Color(0.25f, 1f, 0.5f, 1f);
 
     private float backgroundTransparency;
-
     private int theme;
 
-    // =========================================================
     // HUD
-    // =========================================================
-
     private bool hudEnabled = true;
     private bool showFPS = true;
     private bool showClock = true;
@@ -109,61 +72,35 @@ public class JelloMenuUI : MonoBehaviour
     private bool showResolution;
     private bool showFPSGraph;
     private bool hudEditMode;
-
     private bool showStatus;
 
     private Color hudColor = Color.white;
 
-    private Rect fpsRect =
-        new Rect(15, 15, 180, 30);
-
-    private Rect clockRect =
-        new Rect(15, 45, 180, 30);
-
-    private Rect runtimeRect =
-        new Rect(15, 75, 220, 30);
-
-    private Rect resolutionRect =
-        new Rect(15, 105, 250, 30);
-
-    private Rect graphRect =
-        new Rect(15, 140, 220, 70);
+    private Rect fpsRect = new Rect(15, 15, 180, 30);
+    private Rect clockRect = new Rect(15, 45, 180, 30);
+    private Rect runtimeRect = new Rect(15, 75, 220, 30);
+    private Rect resolutionRect = new Rect(15, 105, 250, 30);
+    private Rect graphRect = new Rect(15, 140, 220, 70);
 
     private float fpsWarning = 30f;
 
-    // =========================================================
     // FPS
-    // =========================================================
-
     private float fps;
-
     private float fpsTimer;
-
     private int fpsFrames;
 
-    private readonly float[] fpsHistory =
-        new float[60];
-
+    private readonly float[] fpsHistory = new float[60];
     private int fpsHistoryIndex;
 
-    // =========================================================
-    // PLAYERS
-    // =========================================================
-
+    // Players
     private bool playersOverlay;
-
     private bool showPlayerColor = true;
-
     private bool showPlayerStatus = true;
-
     private bool showPlayerDevice = true;
-
     private bool showIdleTime = true;
-
     private bool sortPlayers;
 
     private string playerSearch = "";
-
     private Vector2 playerScroll;
 
     private readonly List<PlayerDisplayData> players =
@@ -171,12 +108,8 @@ public class JelloMenuUI : MonoBehaviour
 
     private float playerRefreshTimer;
 
-    // =========================================================
-    // COSMETICS
-    // =========================================================
-
+    // Cosmetics
     private bool cosmeticsWarning = true;
-
     private int cosmeticCategory;
 
     private readonly string[] cosmeticCategories =
@@ -202,10 +135,7 @@ public class JelloMenuUI : MonoBehaviour
         "Astronaut"
     };
 
-    // =========================================================
-    // HOST
-    // =========================================================
-
+    // Host
     private int hostSection;
 
     private readonly string[] hostSections =
@@ -217,17 +147,11 @@ public class JelloMenuUI : MonoBehaviour
     };
 
     private bool hostConfirmation;
-
     private string pendingHostAction = "";
 
-    // =========================================================
-    // MISC
-    // =========================================================
-
+    // Misc
     private bool debugInfo;
-
     private bool notificationsEnabled = true;
-
     private bool compactMode;
 
     private int selectedPreset;
@@ -240,64 +164,37 @@ public class JelloMenuUI : MonoBehaviour
         "Streamer"
     };
 
-    // =========================================================
-    // START
-    // =========================================================
-
     private void Start()
     {
         LoadSettings();
-
         BuildDemoPlayerList();
 
-        AddNotification(
-            "Jello loaded successfully."
-        );
+        AddNotification("Jello loaded successfully.");
     }
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
 
     private void Update()
     {
         UpdateFPS();
-
         UpdateAnimation();
-
         UpdatePlayers();
 
         if (notificationTimer > 0f)
-        {
-            notificationTimer -=
-                Time.unscaledDeltaTime;
-        }
+            notificationTimer -= Time.unscaledDeltaTime;
     }
-
-    // =========================================================
-    // FPS
-    // =========================================================
 
     private void UpdateFPS()
     {
         fpsFrames++;
-
-        fpsTimer +=
-            Time.unscaledDeltaTime;
+        fpsTimer += Time.unscaledDeltaTime;
 
         if (fpsTimer >= 0.5f)
         {
-            fps =
-                fpsFrames /
-                fpsTimer;
+            fps = fpsFrames / fpsTimer;
 
             fpsFrames = 0;
-
             fpsTimer = 0f;
 
-            fpsHistory[
-                fpsHistoryIndex
-            ] = fps;
+            fpsHistory[fpsHistoryIndex] = fps;
 
             fpsHistoryIndex =
                 (fpsHistoryIndex + 1) %
@@ -305,50 +202,33 @@ public class JelloMenuUI : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // ANIMATION
-    // =========================================================
-
     private void UpdateAnimation()
     {
-        targetMenuAnimation =
-            menuOpen ? 1f : 0f;
+        targetMenuAnimation = menuOpen ? 1f : 0f;
 
         if (!animationsEnabled)
         {
-            menuAnimation =
-                targetMenuAnimation;
-
+            menuAnimation = targetMenuAnimation;
             tabAnimation = 1f;
-
             return;
         }
 
-        menuAnimation =
-            Mathf.MoveTowards(
-                menuAnimation,
-                targetMenuAnimation,
-                Time.unscaledDeltaTime *
-                animationSpeed
-            );
+        menuAnimation = Mathf.MoveTowards(
+            menuAnimation,
+            targetMenuAnimation,
+            Time.unscaledDeltaTime * animationSpeed
+        );
 
-        tabAnimation =
-            Mathf.MoveTowards(
-                tabAnimation,
-                1f,
-                Time.unscaledDeltaTime *
-                animationSpeed
-            );
+        tabAnimation = Mathf.MoveTowards(
+            tabAnimation,
+            1f,
+            Time.unscaledDeltaTime * animationSpeed
+        );
     }
-
-    // =========================================================
-    // GUI
-    // =========================================================
 
     private void OnGUI()
     {
         CreateStyles();
-
         HandleMenuKey();
 
         DrawHUD();
@@ -364,10 +244,6 @@ public class JelloMenuUI : MonoBehaviour
         DrawAnimatedMenu();
     }
 
-    // =========================================================
-    // MENU KEY
-    // =========================================================
-
     private void HandleMenuKey()
     {
         if (waitingForKey)
@@ -376,68 +252,43 @@ public class JelloMenuUI : MonoBehaviour
         if (Event.current == null)
             return;
 
-        if (Event.current.type !=
-            EventType.KeyDown)
+        if (Event.current.type != EventType.KeyDown)
             return;
 
-        if (Event.current.keyCode !=
-            menuKey)
+        if (Event.current.keyCode != menuKey)
             return;
 
         menuOpen = !menuOpen;
-
         Event.current.Use();
     }
 
-    // =========================================================
-    // ANIMATED MENU
-    // =========================================================
-
     private void DrawAnimatedMenu()
     {
-        Color oldColor =
-            GUI.color;
+        Color oldColor = GUI.color;
+        Matrix4x4 oldMatrix = GUI.matrix;
 
-        Matrix4x4 oldMatrix =
-            GUI.matrix;
+        float eased = EaseOutCubic(menuAnimation);
 
-        float eased =
-            EaseOutCubic(
-                menuAnimation
-            );
-
-        GUI.color =
-            new Color(
-                1f,
-                1f,
-                1f,
-                eased * menuOpacity
-            );
+        GUI.color = new Color(
+            1f,
+            1f,
+            1f,
+            eased * menuOpacity
+        );
 
         float scale =
-            Mathf.Lerp(
-                0.90f,
-                1f,
-                eased
-            ) * uiScale;
+            Mathf.Lerp(0.90f, 1f, eased) * uiScale;
 
-        Vector2 center =
-            new Vector2(
-                window.x +
-                window.width / 2f,
-                window.y +
-                window.height / 2f
-            );
+        Vector2 center = new Vector2(
+            window.x + window.width / 2f,
+            window.y + window.height / 2f
+        );
 
         GUI.matrix =
             Matrix4x4.TRS(
                 center,
                 Quaternion.identity,
-                new Vector3(
-                    scale,
-                    scale,
-                    1f
-                )
+                new Vector3(scale, scale, 1f)
             ) *
             Matrix4x4.TRS(
                 -center,
@@ -448,18 +299,13 @@ public class JelloMenuUI : MonoBehaviour
         window = GUI.Window(
             1337,
             window,
-            DrawMenu,
+            new GUI.WindowFunction(DrawMenu),
             "Jello"
         );
 
         GUI.matrix = oldMatrix;
-
         GUI.color = oldColor;
     }
-
-    // =========================================================
-    // MAIN MENU
-    // =========================================================
 
     private void DrawMenu(int id)
     {
@@ -473,49 +319,40 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Space(12);
 
-        Color oldColor =
-            GUI.color;
+        Color oldColor = GUI.color;
 
-        GUI.color =
-            new Color(
-                1f,
-                1f,
-                1f,
-                animationsEnabled
-                    ? EaseOutCubic(tabAnimation)
-                    : 1f
-            );
+        GUI.color = new Color(
+            1f,
+            1f,
+            1f,
+            animationsEnabled
+                ? EaseOutCubic(tabAnimation)
+                : 1f
+        );
 
         switch (currentTab)
         {
             case 0:
                 DrawHUDTab();
                 break;
-
             case 1:
                 DrawPlayersTab();
                 break;
-
             case 2:
                 DrawUITab();
                 break;
-
             case 3:
                 DrawKeybindTab();
                 break;
-
             case 4:
                 DrawCosmeticsTab();
                 break;
-
             case 5:
                 DrawHostTab();
                 break;
-
             case 6:
                 DrawMiscTab();
                 break;
-
             case 7:
                 DrawAboutTab();
                 break;
@@ -526,7 +363,6 @@ public class JelloMenuUI : MonoBehaviour
         GUILayout.FlexibleSpace();
 
         GUILayout.EndVertical();
-
         GUILayout.EndHorizontal();
 
         GUI.DragWindow(
@@ -539,10 +375,6 @@ public class JelloMenuUI : MonoBehaviour
         );
     }
 
-    // =========================================================
-    // TABS
-    // =========================================================
-
     private void DrawTabs()
     {
         GUILayout.BeginVertical(
@@ -553,67 +385,48 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Space(12);
 
-        GUILayout.Label(
-            "JELLO",
-            titleStyle
-        );
+        GUILayout.Label("JELLO", titleStyle);
 
         GUILayout.Space(10);
 
-        for (int i = 0;
-             i < tabs.Length;
-             i++)
+        for (int i = 0; i < tabs.Length; i++)
         {
-            Rect rect =
-                GUILayoutUtility.GetRect(
-                    new GUIContent(tabs[i]),
-                    GUI.skin.button,
-                    GUILayout.Height(38)
-                );
+            Rect rect = GUILayoutUtility.GetRect(
+                new GUIContent(tabs[i]),
+                GUI.skin.button,
+                GUILayout.Height(38)
+            );
 
             bool hover =
-                rect.Contains(
-                    Event.current.mousePosition
-                );
+                rect.Contains(Event.current.mousePosition);
 
-            tabHover[i] =
-                Mathf.MoveTowards(
-                    tabHover[i],
-                    hover ? 1f : 0f,
-                    Time.unscaledDeltaTime *
-                    animationSpeed
-                );
+            tabHover[i] = Mathf.MoveTowards(
+                tabHover[i],
+                hover ? 1f : 0f,
+                Time.unscaledDeltaTime * animationSpeed
+            );
 
-            Color old =
-                GUI.color;
+            Color old = GUI.color;
 
             if (currentTab == i)
             {
-                GUI.color =
-                    Color.Lerp(
-                        accentColor *
-                        0.65f,
-                        accentColor,
-                        tabHover[i]
-                    );
+                GUI.color = Color.Lerp(
+                    accentColor * 0.65f,
+                    accentColor,
+                    tabHover[i]
+                );
             }
             else if (hover)
             {
-                GUI.color =
-                    new Color(
-                        0.8f,
-                        1f,
-                        0.85f
-                    );
+                GUI.color = new Color(
+                    0.8f,
+                    1f,
+                    0.85f
+                );
             }
 
-            if (GUI.Button(
-                rect,
-                tabs[i]
-            ))
-            {
+            if (GUI.Button(rect, tabs[i]))
                 SelectTab(i);
-            }
 
             GUI.color = old;
         }
@@ -634,84 +447,38 @@ public class JelloMenuUI : MonoBehaviour
         GUILayout.EndVertical();
     }
 
-    // =========================================================
-    // SELECT TAB
-    // =========================================================
-
     private void SelectTab(int index)
     {
         if (currentTab == index)
             return;
 
         previousTab = currentTab;
-
         currentTab = index;
-
         tabAnimation = 0f;
-
         waitingForKey = false;
     }
 
     // =========================================================
-    // HUD TAB
+    // HUD
     // =========================================================
 
     private void DrawHUDTab()
     {
-        GUILayout.Label(
-            "HUD",
-            titleStyle
-        );
-
+        GUILayout.Label("HUD", titleStyle);
         GUILayout.Space(8);
 
-        hudEnabled =
-            GUILayout.Toggle(
-                hudEnabled,
-                "Enable HUD"
-            );
+        hudEnabled = GUILayout.Toggle(
+            hudEnabled,
+            "Enable HUD"
+        );
 
-        showFPS =
-            GUILayout.Toggle(
-                showFPS,
-                "FPS"
-            );
-
-        showClock =
-            GUILayout.Toggle(
-                showClock,
-                "Clock"
-            );
-
-        showRuntime =
-            GUILayout.Toggle(
-                showRuntime,
-                "Runtime"
-            );
-
-        showResolution =
-            GUILayout.Toggle(
-                showResolution,
-                "Resolution"
-            );
-
-        showFPSGraph =
-            GUILayout.Toggle(
-                showFPSGraph,
-                "FPS Graph"
-            );
-
-        showStatus =
-            GUILayout.Toggle(
-                showStatus,
-                "Status"
-            );
-
-        hudEditMode =
-            GUILayout.Toggle(
-                hudEditMode,
-                "HUD Edit Mode"
-            );
+        showFPS = GUILayout.Toggle(showFPS, "FPS");
+        showClock = GUILayout.Toggle(showClock, "Clock");
+        showRuntime = GUILayout.Toggle(showRuntime, "Runtime");
+        showResolution = GUILayout.Toggle(showResolution, "Resolution");
+        showFPSGraph = GUILayout.Toggle(showFPSGraph, "FPS Graph");
+        showStatus = GUILayout.Toggle(showStatus, "Status");
+        hudEditMode = GUILayout.Toggle(hudEditMode, "HUD Edit Mode");
 
         GUILayout.Space(8);
 
@@ -720,12 +487,11 @@ public class JelloMenuUI : MonoBehaviour
             labelStyle
         );
 
-        fpsWarning =
-            GUILayout.HorizontalSlider(
-                fpsWarning,
-                10f,
-                120f
-            );
+        fpsWarning = GUILayout.HorizontalSlider(
+            fpsWarning,
+            10f,
+            120f
+        );
 
         GUILayout.Space(8);
 
@@ -733,17 +499,13 @@ public class JelloMenuUI : MonoBehaviour
             "Move HUD Left",
             GUILayout.Height(30)
         ))
-        {
             MoveHUD(-10f, 0f);
-        }
 
         if (GUILayout.Button(
             "Move HUD Right",
             GUILayout.Height(30)
         ))
-        {
             MoveHUD(10f, 0f);
-        }
 
         if (GUILayout.Button(
             "Reset HUD",
@@ -751,71 +513,41 @@ public class JelloMenuUI : MonoBehaviour
         ))
         {
             ResetHUD();
-
-            AddNotification(
-                "HUD reset."
-            );
+            AddNotification("HUD reset.");
         }
     }
 
     // =========================================================
-    // PLAYERS TAB
+    // PLAYERS
     // =========================================================
 
     private void DrawPlayersTab()
     {
-        GUILayout.Label(
-            "PLAYERS",
-            titleStyle
-        );
-
+        GUILayout.Label("PLAYERS", titleStyle);
         GUILayout.Space(6);
 
         playersOverlay =
-            GUILayout.Toggle(
-                playersOverlay,
-                "Player Overlay"
-            );
+            GUILayout.Toggle(playersOverlay, "Player Overlay");
 
         showPlayerColor =
-            GUILayout.Toggle(
-                showPlayerColor,
-                "Color"
-            );
+            GUILayout.Toggle(showPlayerColor, "Color");
 
         showPlayerStatus =
-            GUILayout.Toggle(
-                showPlayerStatus,
-                "Status"
-            );
+            GUILayout.Toggle(showPlayerStatus, "Status");
 
         showPlayerDevice =
-            GUILayout.Toggle(
-                showPlayerDevice,
-                "Device"
-            );
+            GUILayout.Toggle(showPlayerDevice, "Device");
 
         showIdleTime =
-            GUILayout.Toggle(
-                showIdleTime,
-                "Idle Time"
-            );
+            GUILayout.Toggle(showIdleTime, "Idle Time");
 
         sortPlayers =
-            GUILayout.Toggle(
-                sortPlayers,
-                "Sort Alphabetically"
-            );
+            GUILayout.Toggle(sortPlayers, "Sort Alphabetically");
 
-        GUILayout.Label(
-            "Search",
-            labelStyle
-        );
+        GUILayout.Label("Search", labelStyle);
 
         playerSearch =
-            GUILayout.TextField(
-                playerSearch
-            );
+            GUILayout.TextField(playerSearch);
 
         GUILayout.Space(5);
 
@@ -825,10 +557,7 @@ public class JelloMenuUI : MonoBehaviour
         ))
         {
             RefreshPlayers();
-
-            AddNotification(
-                "Players refreshed."
-            );
+            AddNotification("Players refreshed.");
         }
 
         playerScroll =
@@ -837,19 +566,14 @@ public class JelloMenuUI : MonoBehaviour
                 GUILayout.Height(245)
             );
 
-        for (int i = 0;
-             i < players.Count;
-             i++)
+        for (int i = 0; i < players.Count; i++)
         {
-            PlayerDisplayData player =
-                players[i];
+            PlayerDisplayData player = players[i];
 
-            if (!string.IsNullOrEmpty(
-                playerSearch) &&
-                !player.Name.ToLower()
-                    .Contains(
-                        playerSearch.ToLower()
-                    ))
+            if (!string.IsNullOrEmpty(playerSearch) &&
+                !player.Name.ToLower().Contains(
+                    playerSearch.ToLower()
+                ))
                 continue;
 
             DrawPlayerCard(player);
@@ -863,21 +587,11 @@ public class JelloMenuUI : MonoBehaviour
         );
     }
 
-    // =========================================================
-    // PLAYER CARD
-    // =========================================================
-
-    private void DrawPlayerCard(
-        PlayerDisplayData player)
+    private void DrawPlayerCard(PlayerDisplayData player)
     {
-        GUILayout.BeginVertical(
-            GUI.skin.box
-        );
+        GUILayout.BeginVertical(GUI.skin.box);
 
-        GUILayout.Label(
-            player.Name,
-            labelStyle
-        );
+        GUILayout.Label(player.Name, labelStyle);
 
         if (showPlayerColor)
             GUILayout.Label(
@@ -899,10 +613,7 @@ public class JelloMenuUI : MonoBehaviour
 
         if (showIdleTime)
             GUILayout.Label(
-                "Idle: " +
-                FormatTime(
-                    player.IdleTime
-                ),
+                "Idle: " + FormatTime(player.IdleTime),
                 smallStyle
             );
 
@@ -912,16 +623,12 @@ public class JelloMenuUI : MonoBehaviour
     }
 
     // =========================================================
-    // UI TAB
+    // UI
     // =========================================================
 
     private void DrawUITab()
     {
-        GUILayout.Label(
-            "UI",
-            titleStyle
-        );
-
+        GUILayout.Label("UI", titleStyle);
         GUILayout.Space(8);
 
         animationsEnabled =
@@ -980,34 +687,21 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Space(8);
 
-        GUILayout.Label(
-            "Themes",
-            labelStyle
-        );
+        GUILayout.Label("Themes", labelStyle);
 
-        if (GUILayout.Button(
-            "Jello Green"
-        ))
+        if (GUILayout.Button("Jello Green"))
             ApplyTheme(0);
 
-        if (GUILayout.Button(
-            "Cyan"
-        ))
+        if (GUILayout.Button("Cyan"))
             ApplyTheme(1);
 
-        if (GUILayout.Button(
-            "Purple"
-        ))
+        if (GUILayout.Button("Purple"))
             ApplyTheme(2);
 
-        if (GUILayout.Button(
-            "Red"
-        ))
+        if (GUILayout.Button("Red"))
             ApplyTheme(3);
 
-        if (GUILayout.Button(
-            "Dark"
-        ))
+        if (GUILayout.Button("Dark"))
             ApplyTheme(4);
 
         compactMode =
@@ -1023,11 +717,7 @@ public class JelloMenuUI : MonoBehaviour
 
     private void DrawKeybindTab()
     {
-        GUILayout.Label(
-            "KEYBINDS",
-            titleStyle
-        );
-
+        GUILayout.Label("KEYBINDS", titleStyle);
         GUILayout.Space(10);
 
         GUILayout.Label(
@@ -1043,9 +733,7 @@ public class JelloMenuUI : MonoBehaviour
             ))
             {
                 waitingForKey = true;
-
-                statusText =
-                    "Press a key...";
+                statusText = "Press a key...";
             }
         }
         else
@@ -1056,22 +744,15 @@ public class JelloMenuUI : MonoBehaviour
             );
 
             if (Event.current != null &&
-                Event.current.type ==
-                EventType.KeyDown)
+                Event.current.type == EventType.KeyDown)
             {
-                if (Event.current.keyCode !=
-                    KeyCode.None)
+                if (Event.current.keyCode != KeyCode.None)
                 {
-                    menuKey =
-                        Event.current.keyCode;
-
+                    menuKey = Event.current.keyCode;
                     waitingForKey = false;
 
                     SaveSettings();
-
-                    AddNotification(
-                        "Keybind saved."
-                    );
+                    AddNotification("Keybind saved.");
 
                     Event.current.Use();
                 }
@@ -1080,20 +761,13 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Space(8);
 
-        if (GUILayout.Button(
-            "Reset Keybind"
-        ))
+        if (GUILayout.Button("Reset Keybind"))
         {
-            menuKey =
-                KeyCode.Delete;
-
+            menuKey = KeyCode.Delete;
             waitingForKey = false;
 
             SaveSettings();
-
-            AddNotification(
-                "Keybind reset."
-            );
+            AddNotification("Keybind reset.");
         }
     }
 
@@ -1103,30 +777,20 @@ public class JelloMenuUI : MonoBehaviour
 
     private void DrawCosmeticsTab()
     {
-        GUILayout.Label(
-            "COSMETICS",
-            titleStyle
-        );
-
+        GUILayout.Label("COSMETICS", titleStyle);
         GUILayout.Space(8);
 
         if (cosmeticsWarning)
         {
-            GUILayout.BeginVertical(
-                GUI.skin.box
-            );
+            GUILayout.BeginVertical(GUI.skin.box);
 
             GUILayout.Label(
                 "Cosmetic controls here are a local browser UI. Equipment is only applied through supported game APIs.",
                 smallStyle
             );
 
-            if (GUILayout.Button(
-                "Dismiss"
-            ))
-            {
+            if (GUILayout.Button("Dismiss"))
                 cosmeticsWarning = false;
-            }
 
             GUILayout.EndVertical();
         }
@@ -1143,9 +807,7 @@ public class JelloMenuUI : MonoBehaviour
                 cosmeticCategories[i],
                 GUILayout.Height(30)
             ))
-            {
                 cosmeticCategory = i;
-            }
         }
 
         GUILayout.EndHorizontal();
@@ -1153,9 +815,7 @@ public class JelloMenuUI : MonoBehaviour
         GUILayout.Space(8);
 
         GUILayout.Label(
-            cosmeticCategories[
-                cosmeticCategory
-            ],
+            cosmeticCategories[cosmeticCategory],
             titleStyle
         );
 
@@ -1174,12 +834,10 @@ public class JelloMenuUI : MonoBehaviour
             ))
             {
                 statusText =
-                    "Selected " +
-                    cosmeticItems[i];
+                    "Selected " + cosmeticItems[i];
 
                 AddNotification(
-                    "Selected: " +
-                    cosmeticItems[i]
+                    "Selected: " + cosmeticItems[i]
                 );
             }
         }
@@ -1188,16 +846,12 @@ public class JelloMenuUI : MonoBehaviour
     }
 
     // =========================================================
-    // HOST TAB
+    // HOST
     // =========================================================
 
     private void DrawHostTab()
     {
-        GUILayout.Label(
-            "HOST ONLY",
-            titleStyle
-        );
-
+        GUILayout.Label("HOST ONLY", titleStyle);
         GUILayout.Space(6);
 
         GUILayout.BeginHorizontal();
@@ -1210,9 +864,7 @@ public class JelloMenuUI : MonoBehaviour
                 hostSections[i],
                 GUILayout.Height(30)
             ))
-            {
                 hostSection = i;
-            }
         }
 
         GUILayout.EndHorizontal();
@@ -1242,15 +894,9 @@ public class JelloMenuUI : MonoBehaviour
             DrawHostConfirmation();
     }
 
-    // =========================================================
-    // HOST OVERVIEW
-    // =========================================================
-
     private void DrawHostOverview()
     {
-        GUILayout.BeginVertical(
-            GUI.skin.box
-        );
+        GUILayout.BeginVertical(GUI.skin.box);
 
         GUILayout.Label(
             "Host controls",
@@ -1275,10 +921,6 @@ public class JelloMenuUI : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // HOST PLAYERS
-    // =========================================================
-
     private void DrawHostPlayers()
     {
         GUILayout.Label(
@@ -1286,16 +928,11 @@ public class JelloMenuUI : MonoBehaviour
             labelStyle
         );
 
-        for (int i = 0;
-             i < players.Count;
-             i++)
+        for (int i = 0; i < players.Count; i++)
         {
-            PlayerDisplayData player =
-                players[i];
+            PlayerDisplayData player = players[i];
 
-            GUILayout.BeginHorizontal(
-                GUI.skin.box
-            );
+            GUILayout.BeginHorizontal(GUI.skin.box);
 
             GUILayout.Label(
                 player.Name,
@@ -1307,10 +944,7 @@ public class JelloMenuUI : MonoBehaviour
                 GUILayout.Width(65)
             ))
             {
-                AskHostAction(
-                    "Kick " +
-                    player.Name
-                );
+                AskHostAction("Kick " + player.Name);
             }
 
             if (GUILayout.Button(
@@ -1318,61 +952,35 @@ public class JelloMenuUI : MonoBehaviour
                 GUILayout.Width(65)
             ))
             {
-                AskHostAction(
-                    "Ban " +
-                    player.Name
-                );
+                AskHostAction("Ban " + player.Name);
             }
 
             GUILayout.EndHorizontal();
         }
     }
 
-    // =========================================================
-    // HOST LOBBY
-    // =========================================================
-
     private void DrawHostLobby()
     {
-        GUILayout.Label(
-            "Lobby",
-            titleStyle
-        );
+        GUILayout.Label("Lobby", titleStyle);
 
         if (GUILayout.Button(
             "Start Game",
             GUILayout.Height(36)
         ))
-        {
-            AskHostAction(
-                "Start Game"
-            );
-        }
+            AskHostAction("Start Game");
 
         if (GUILayout.Button(
             "Return To Lobby",
             GUILayout.Height(36)
         ))
-        {
-            AskHostAction(
-                "Return To Lobby"
-            );
-        }
+            AskHostAction("Return To Lobby");
 
         if (GUILayout.Button(
             "Refresh Lobby",
             GUILayout.Height(36)
         ))
-        {
-            AddNotification(
-                "Lobby refreshed."
-            );
-        }
+            AddNotification("Lobby refreshed.");
     }
-
-    // =========================================================
-    // HOST PRESETS
-    // =========================================================
 
     private void DrawHostPresets()
     {
@@ -1386,13 +994,10 @@ public class JelloMenuUI : MonoBehaviour
              i++)
         {
             if (GUILayout.Button(
-                "Load " +
-                presetNames[i],
+                "Load " + presetNames[i],
                 GUILayout.Height(32)
             ))
-            {
                 LoadPreset(i);
-            }
         }
 
         if (GUILayout.Button(
@@ -1401,36 +1006,21 @@ public class JelloMenuUI : MonoBehaviour
         ))
         {
             SaveSettings();
-
-            AddNotification(
-                "Preset saved."
-            );
+            AddNotification("Preset saved.");
         }
     }
 
-    // =========================================================
-    // HOST CONFIRMATION
-    // =========================================================
-
-    private void AskHostAction(
-        string action)
+    private void AskHostAction(string action)
     {
-        pendingHostAction =
-            action;
-
+        pendingHostAction = action;
         hostConfirmation = true;
     }
 
     private void DrawHostConfirmation()
     {
-        GUILayout.BeginVertical(
-            GUI.skin.box
-        );
+        GUILayout.BeginVertical(GUI.skin.box);
 
-        GUILayout.Label(
-            "Confirm",
-            titleStyle
-        );
+        GUILayout.Label("Confirm", titleStyle);
 
         GUILayout.Label(
             pendingHostAction,
@@ -1439,16 +1029,10 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.BeginHorizontal();
 
-        if (GUILayout.Button(
-            "Cancel"
-        ))
-        {
+        if (GUILayout.Button("Cancel"))
             hostConfirmation = false;
-        }
 
-        if (GUILayout.Button(
-            "Confirm"
-        ))
+        if (GUILayout.Button("Confirm"))
         {
             statusText =
                 pendingHostAction +
@@ -1473,11 +1057,7 @@ public class JelloMenuUI : MonoBehaviour
 
     private void DrawMiscTab()
     {
-        GUILayout.Label(
-            "MISC",
-            titleStyle
-        );
-
+        GUILayout.Label("MISC", titleStyle);
         GUILayout.Space(8);
 
         GUILayout.Label(
@@ -1499,39 +1079,26 @@ public class JelloMenuUI : MonoBehaviour
 
         GUILayout.Space(8);
 
-        if (GUILayout.Button(
-            "Save Settings"
-        ))
+        if (GUILayout.Button("Save Settings"))
         {
             SaveSettings();
-
-            AddNotification(
-                "Settings saved."
-            );
+            AddNotification("Settings saved.");
         }
 
-        if (GUILayout.Button(
-            "Reset Everything"
-        ))
+        if (GUILayout.Button("Reset Everything"))
         {
             ResetEverything();
-
-            AddNotification(
-                "Settings reset."
-            );
+            AddNotification("Settings reset.");
         }
 
         if (debugInfo)
         {
             GUILayout.Space(8);
 
-            GUILayout.BeginVertical(
-                GUI.skin.box
-            );
+            GUILayout.BeginVertical(GUI.skin.box);
 
             GUILayout.Label(
-                "FPS: " +
-                fps.ToString("0.0"),
+                "FPS: " + fps.ToString("0.0"),
                 smallStyle
             );
 
@@ -1544,8 +1111,7 @@ public class JelloMenuUI : MonoBehaviour
             );
 
             GUILayout.Label(
-                "Tab: " +
-                tabs[currentTab],
+                "Tab: " + tabs[currentTab],
                 smallStyle
             );
 
@@ -1565,17 +1131,10 @@ public class JelloMenuUI : MonoBehaviour
 
     private void DrawAboutTab()
     {
-        GUILayout.Label(
-            "ABOUT",
-            titleStyle
-        );
-
+        GUILayout.Label("ABOUT", titleStyle);
         GUILayout.Space(15);
 
-        GUILayout.Label(
-            "Jello",
-            titleStyle
-        );
+        GUILayout.Label("Jello", titleStyle);
 
         GUILayout.Label(
             "Version 1.1.0",
@@ -1601,45 +1160,15 @@ public class JelloMenuUI : MonoBehaviour
             labelStyle
         );
 
-        GUILayout.Label(
-            "• Animated UI",
-            smallStyle
-        );
-
-        GUILayout.Label(
-            "• HUD customization",
-            smallStyle
-        );
-
-        GUILayout.Label(
-            "• FPS history",
-            smallStyle
-        );
-
-        GUILayout.Label(
-            "• Player filtering",
-            smallStyle
-        );
-
-        GUILayout.Label(
-            "• Idle tracking framework",
-            smallStyle
-        );
-
-        GUILayout.Label(
-            "• Themes",
-            smallStyle
-        );
-
-        GUILayout.Label(
-            "• Persistent settings",
-            smallStyle
-        );
-
-        GUILayout.Label(
-            "• Host management UI",
-            smallStyle
-        );
+        GUILayout.Label("• Animated UI", smallStyle);
+        GUILayout.Label("• HUD customization", smallStyle);
+        GUILayout.Label("• FPS history", smallStyle);
+        GUILayout.Label("• Player filtering", smallStyle);
+        GUILayout.Label("• Idle tracking framework", smallStyle);
+        GUILayout.Label("• Themes", smallStyle);
+        GUILayout.Label("• Persistent settings", smallStyle);
+        GUILayout.Label("• Host management UI", smallStyle);
+        GUILayout.Label("• Host presets", smallStyle);
     }
 
     // =========================================================
@@ -1651,18 +1180,14 @@ public class JelloMenuUI : MonoBehaviour
         if (!hudEnabled)
             return;
 
-        Color old =
-            GUI.color;
-
-        GUI.color =
-            hudColor;
+        Color old = GUI.color;
+        GUI.color = hudColor;
 
         if (showFPS)
         {
             GUI.Label(
                 fpsRect,
-                "FPS: " +
-                fps.ToString("0"),
+                "FPS: " + fps.ToString("0"),
                 hudStyle
             );
         }
@@ -1671,9 +1196,7 @@ public class JelloMenuUI : MonoBehaviour
         {
             GUI.Label(
                 clockRect,
-                DateTime.Now.ToString(
-                    "HH:mm:ss"
-                ),
+                DateTime.Now.ToString("HH:mm:ss"),
                 hudStyle
             );
         }
@@ -1688,9 +1211,7 @@ public class JelloMenuUI : MonoBehaviour
             GUI.Label(
                 runtimeRect,
                 "Runtime: " +
-                runtime.ToString(
-                    @"hh\:mm\:ss"
-                ),
+                runtime.ToString(@"hh\:mm\:ss"),
                 hudStyle
             );
         }
@@ -1713,12 +1234,7 @@ public class JelloMenuUI : MonoBehaviour
         if (showStatus)
         {
             GUI.Label(
-                new Rect(
-                    15,
-                    215,
-                    350,
-                    28
-                ),
+                new Rect(15, 215, 350, 28),
                 statusText,
                 hudStyle
             );
@@ -1727,35 +1243,23 @@ public class JelloMenuUI : MonoBehaviour
         GUI.color = old;
     }
 
-    // =========================================================
-    // FPS GRAPH
-    // =========================================================
-
     private void DrawFPSGraph()
     {
-        GUI.Box(
-            graphRect,
-            "FPS"
-        );
+        GUI.Box(graphRect, "FPS");
 
         float max =
-            Mathf.Max(
-                120f,
-                fpsWarning
-            );
+            Mathf.Max(120f, fpsWarning);
 
         for (int i = 0;
              i < fpsHistory.Length - 1;
              i++)
         {
             int a =
-                (fpsHistoryIndex +
-                 i) %
+                (fpsHistoryIndex + i) %
                 fpsHistory.Length;
 
             int b =
-                (fpsHistoryIndex +
-                 i + 1) %
+                (fpsHistoryIndex + i + 1) %
                 fpsHistory.Length;
 
             float y1 =
@@ -1763,8 +1267,7 @@ public class JelloMenuUI : MonoBehaviour
                     graphRect.yMax - 8,
                     graphRect.y + 8,
                     Mathf.Clamp01(
-                        fpsHistory[a] /
-                        max
+                        fpsHistory[a] / max
                     )
                 );
 
@@ -1773,23 +1276,20 @@ public class JelloMenuUI : MonoBehaviour
                     graphRect.yMax - 8,
                     graphRect.y + 8,
                     Mathf.Clamp01(
-                        fpsHistory[b] /
-                        max
+                        fpsHistory[b] / max
                     )
                 );
 
             DrawLine(
                 new Vector2(
                     graphRect.x +
-                    i *
-                    graphRect.width /
+                    i * graphRect.width /
                     fpsHistory.Length,
                     y1
                 ),
                 new Vector2(
                     graphRect.x +
-                    (i + 1) *
-                    graphRect.width /
+                    (i + 1) * graphRect.width /
                     fpsHistory.Length,
                     y2
                 ),
@@ -1806,17 +1306,9 @@ public class JelloMenuUI : MonoBehaviour
     private void DrawPlayersOverlay()
     {
         Rect rect =
-            new Rect(
-                15,
-                270,
-                300,
-                260
-            );
+            new Rect(15, 270, 300, 260);
 
-        GUI.Box(
-            rect,
-            "Players"
-        );
+        GUI.Box(rect, "Players");
 
         GUILayout.BeginArea(
             new Rect(
@@ -1831,17 +1323,14 @@ public class JelloMenuUI : MonoBehaviour
              i < players.Count;
              i++)
         {
-            PlayerDisplayData p =
-                players[i];
+            PlayerDisplayData p = players[i];
 
             GUILayout.Label(
                 p.Name +
                 " | " +
                 p.Color +
                 " | " +
-                FormatTime(
-                    p.IdleTime
-                ),
+                FormatTime(p.IdleTime),
                 smallStyle
             );
         }
@@ -1853,8 +1342,7 @@ public class JelloMenuUI : MonoBehaviour
     // NOTIFICATIONS
     // =========================================================
 
-    private void AddNotification(
-        string text)
+    private void AddNotification(string text)
     {
         statusText = text;
 
@@ -1917,24 +1405,11 @@ public class JelloMenuUI : MonoBehaviour
 
     private void RefreshPlayers()
     {
-        /*
-         * API-INDEPENDENT PLACEHOLDER.
-         *
-         * Replace this with PlayerControl/GameData
-         * integration once the exact Among Us build
-         * is identified.
-         */
-
         if (players.Count == 0)
             BuildDemoPlayerList();
 
-        foreach (
-            PlayerDisplayData player
-            in players)
-        {
-            player.LastUpdate =
-                Time.unscaledTime;
-        }
+        foreach (PlayerDisplayData player in players)
+            player.LastUpdate = Time.unscaledTime;
     }
 
     private void UpdatePlayers()
@@ -1947,29 +1422,16 @@ public class JelloMenuUI : MonoBehaviour
 
         playerRefreshTimer = 0f;
 
-        foreach (
-            PlayerDisplayData player
-            in players)
+        foreach (PlayerDisplayData player in players)
         {
-            /*
-             * This framework tracks inactivity.
-             *
-             * Real movement/interactions should be
-             * connected to the game's PlayerControl
-             * API for your exact build.
-             */
-
             if (Time.unscaledTime -
-                player.LastUpdate >
-                90f)
+                player.LastUpdate > 90f)
             {
-                player.Status =
-                    "Idle";
+                player.Status = "Idle";
             }
             else
             {
-                player.Status =
-                    "Active";
+                player.Status = "Active";
             }
 
             player.IdleTime =
@@ -2002,99 +1464,127 @@ public class JelloMenuUI : MonoBehaviour
     {
         theme = value;
 
+        ApplyThemeSilent(value);
+
+        SaveSettings();
+
+        AddNotification("Theme changed.");
+    }
+
+    private void ApplyThemeSilent(int value)
+    {
         switch (value)
         {
-            case 0:
-                backgroundColor =
-                    new Color(
-                        0.04f,
-                        0.06f,
-                        0.05f
-                    );
-
-                accentColor =
-                    new Color(
-                        0.25f,
-                        1f,
-                        0.5f
-                    );
-                break;
-
             case 1:
                 backgroundColor =
-                    new Color(
-                        0.03f,
-                        0.08f,
-                        0.10f
-                    );
+                    new Color(0.03f, 0.08f, 0.10f);
 
-                accentColor =
-                    Color.cyan;
+                accentColor = Color.cyan;
                 break;
 
             case 2:
                 backgroundColor =
-                    new Color(
-                        0.08f,
-                        0.04f,
-                        0.12f
-                    );
+                    new Color(0.08f, 0.04f, 0.12f);
 
                 accentColor =
-                    new Color(
-                        0.7f,
-                        0.3f,
-                        1f
-                    );
+                    new Color(0.7f, 0.3f, 1f);
                 break;
 
             case 3:
                 backgroundColor =
-                    new Color(
-                        0.12f,
-                        0.035f,
-                        0.035f
-                    );
+                    new Color(0.12f, 0.035f, 0.035f);
 
-                accentColor =
-                    Color.red;
+                accentColor = Color.red;
                 break;
 
             case 4:
                 backgroundColor =
-                    new Color(
-                        0.025f,
-                        0.025f,
-                        0.025f
-                    );
+                    new Color(0.025f, 0.025f, 0.025f);
+
+                accentColor = Color.white;
+                break;
+
+            default:
+                backgroundColor =
+                    new Color(0.04f, 0.06f, 0.05f);
 
                 accentColor =
-                    Color.white;
+                    new Color(0.25f, 1f, 0.5f);
+                break;
+        }
+    }
+
+    // =========================================================
+    // PRESETS
+    // =========================================================
+
+    private void LoadPreset(int preset)
+    {
+        if (preset < 0 ||
+            preset >= presetNames.Length)
+            return;
+
+        selectedPreset = preset;
+
+        switch (preset)
+        {
+            case 0:
+                animationsEnabled = true;
+                animationSpeed = 8f;
+                menuOpacity = 1f;
+                uiScale = 1f;
+                backgroundTransparency = 0f;
+                compactMode = false;
+                break;
+
+            case 1:
+                animationsEnabled = true;
+                animationSpeed = 8f;
+                menuOpacity = 0.95f;
+                uiScale = 0.9f;
+                backgroundTransparency = 0.05f;
+                compactMode = true;
+                break;
+
+            case 2:
+                animationsEnabled = false;
+                animationSpeed = 8f;
+                menuOpacity = 1f;
+                uiScale = 0.9f;
+                backgroundTransparency = 0f;
+                compactMode = true;
+                break;
+
+            case 3:
+                animationsEnabled = true;
+                animationSpeed = 10f;
+                menuOpacity = 0.95f;
+                uiScale = 1f;
+                backgroundTransparency = 0.1f;
+                compactMode = false;
                 break;
         }
 
         SaveSettings();
 
         AddNotification(
-            "Theme changed."
+            "Loaded preset: " +
+            presetNames[preset]
         );
     }
 
     // =========================================================
-    // WINDOW BACKGROUND
+    // WINDOW
     // =========================================================
 
     private void DrawWindowBackground()
     {
-        Color old =
-            GUI.color;
+        Color old = GUI.color;
 
-        Color color =
-            backgroundColor;
+        Color color = backgroundColor;
 
         color.a =
-            1f -
-            backgroundTransparency;
+            1f - backgroundTransparency;
 
         GUI.color = color;
 
@@ -2115,111 +1605,46 @@ public class JelloMenuUI : MonoBehaviour
     // HUD MOVEMENT
     // =========================================================
 
-    private void MoveHUD(
-        float x,
-        float y)
+    private void MoveHUD(float x, float y)
     {
-        fpsRect.position +=
-            new Vector2(x, y);
+        Vector2 movement = new Vector2(x, y);
 
-        clockRect.position +=
-            new Vector2(x, y);
-
-        runtimeRect.position +=
-            new Vector2(x, y);
-
-        resolutionRect.position +=
-            new Vector2(x, y);
-
-        graphRect.position +=
-            new Vector2(x, y);
+        fpsRect.position += movement;
+        clockRect.position += movement;
+        runtimeRect.position += movement;
+        resolutionRect.position += movement;
+        graphRect.position += movement;
     }
-
-    // =========================================================
-    // RESET
-    // =========================================================
 
     private void ResetHUD()
     {
-        fpsRect =
-            new Rect(
-                15,
-                15,
-                180,
-                30
-            );
-
-        clockRect =
-            new Rect(
-                15,
-                45,
-                180,
-                30
-            );
-
-        runtimeRect =
-            new Rect(
-                15,
-                75,
-                220,
-                30
-            );
-
-        resolutionRect =
-            new Rect(
-                15,
-                105,
-                250,
-                30
-            );
-
-        graphRect =
-            new Rect(
-                15,
-                140,
-                220,
-                70
-            );
+        fpsRect = new Rect(15, 15, 180, 30);
+        clockRect = new Rect(15, 45, 180, 30);
+        runtimeRect = new Rect(15, 75, 220, 30);
+        resolutionRect = new Rect(15, 105, 250, 30);
+        graphRect = new Rect(15, 140, 220, 70);
     }
 
     private void ResetEverything()
     {
         menuOpacity = 1f;
-
         uiScale = 1f;
-
         backgroundTransparency = 0f;
-
         animationSpeed = 8f;
-
         animationsEnabled = true;
-
         compactMode = false;
-
         theme = 0;
 
         backgroundColor =
-            new Color(
-                0.04f,
-                0.045f,
-                0.06f,
-                1f
-            );
+            new Color(0.04f, 0.045f, 0.06f, 1f);
 
         accentColor =
-            new Color(
-                0.25f,
-                1f,
-                0.5f,
-                1f
-            );
+            new Color(0.25f, 1f, 0.5f, 1f);
 
         hudColor = Color.white;
-
         fpsWarning = 30f;
 
         ResetHUD();
-
         SaveSettings();
     }
 
@@ -2323,80 +1748,6 @@ public class JelloMenuUI : MonoBehaviour
         ApplyThemeSilent(theme);
     }
 
-    private void ApplyThemeSilent(int value)
-    {
-        switch (value)
-        {
-            case 1:
-                backgroundColor =
-                    new Color(
-                        0.03f,
-                        0.08f,
-                        0.10f
-                    );
-
-                accentColor =
-                    Color.cyan;
-                break;
-
-            case 2:
-                backgroundColor =
-                    new Color(
-                        0.08f,
-                        0.04f,
-                        0.12f
-                    );
-
-                accentColor =
-                    new Color(
-                        0.7f,
-                        0.3f,
-                        1f
-                    );
-                break;
-
-            case 3:
-                backgroundColor =
-                    new Color(
-                        0.12f,
-                        0.035f,
-                        0.035f
-                    );
-
-                accentColor =
-                    Color.red;
-                break;
-
-            case 4:
-                backgroundColor =
-                    new Color(
-                        0.025f,
-                        0.025f,
-                        0.025f
-                    );
-
-                accentColor =
-                    Color.white;
-                break;
-
-            default:
-                backgroundColor =
-                    new Color(
-                        0.04f,
-                        0.06f,
-                        0.05f
-                    );
-
-                accentColor =
-                    new Color(
-                        0.25f,
-                        1f,
-                        0.5f
-                    );
-                break;
-        }
-    }
-
     // =========================================================
     // UTILITY
     // =========================================================
@@ -2405,15 +1756,10 @@ public class JelloMenuUI : MonoBehaviour
     {
         TimeSpan time =
             TimeSpan.FromSeconds(
-                Mathf.Max(
-                    0f,
-                    seconds
-                )
+                Mathf.Max(0f, seconds)
             );
 
-        return time.ToString(
-            @"mm\:ss"
-        );
+        return time.ToString(@"mm\:ss");
     }
 
     private Color GetFPSColor()
@@ -2421,18 +1767,15 @@ public class JelloMenuUI : MonoBehaviour
         if (fps >= fpsWarning)
             return Color.green;
 
-        if (fps >=
-            fpsWarning * 0.66f)
+        if (fps >= fpsWarning * 0.66f)
             return Color.yellow;
 
         return Color.red;
     }
 
-    private float EaseOutCubic(
-        float value)
+    private float EaseOutCubic(float value)
     {
-        value =
-            Mathf.Clamp01(value);
+        value = Mathf.Clamp01(value);
 
         return 1f -
             Mathf.Pow(
@@ -2451,13 +1794,11 @@ public class JelloMenuUI : MonoBehaviour
         Color color,
         float width)
     {
-        Color old =
-            GUI.color;
+        Color old = GUI.color;
 
         GUI.color = color;
 
-        Matrix4x4 matrix =
-            GUI.matrix;
+        Matrix4x4 matrix = GUI.matrix;
 
         float angle =
             Vector3.Angle(
@@ -2469,10 +1810,7 @@ public class JelloMenuUI : MonoBehaviour
             angle = -angle;
 
         float length =
-            Vector2.Distance(
-                start,
-                end
-            );
+            Vector2.Distance(start, end);
 
         GUIUtility.RotateAroundPivot(
             angle,
@@ -2490,7 +1828,6 @@ public class JelloMenuUI : MonoBehaviour
         );
 
         GUI.matrix = matrix;
-
         GUI.color = old;
     }
 
@@ -2504,78 +1841,67 @@ public class JelloMenuUI : MonoBehaviour
             return;
 
         titleStyle =
-            new GUIStyle(
-                GUI.skin.label
-            );
+            new GUIStyle(GUI.skin.label);
 
         titleStyle.fontSize = 20;
         titleStyle.fontStyle =
             FontStyle.Bold;
+
         titleStyle.alignment =
             TextAnchor.MiddleCenter;
 
         labelStyle =
-            new GUIStyle(
-                GUI.skin.label
-            );
+            new GUIStyle(GUI.skin.label);
 
         labelStyle.fontSize = 14;
         labelStyle.alignment =
             TextAnchor.MiddleCenter;
 
         hudStyle =
-            new GUIStyle(
-                GUI.skin.label
-            );
+            new GUIStyle(GUI.skin.label);
 
         hudStyle.fontSize = 16;
         hudStyle.fontStyle =
             FontStyle.Bold;
 
         smallStyle =
-            new GUIStyle(
-                GUI.skin.label
-            );
+            new GUIStyle(GUI.skin.label);
 
         smallStyle.fontSize = 12;
         smallStyle.alignment =
             TextAnchor.MiddleCenter;
 
         boxStyle =
-            new GUIStyle(
-                GUI.skin.box
-            );
+            new GUIStyle(GUI.skin.box);
     }
+}
 
-    // =========================================================
-    // PLAYER DATA
-    // =========================================================
+// =========================================================
+// PLAYER DATA
+// =========================================================
 
-    private class PlayerDisplayData
+public class PlayerDisplayData
+{
+    public string Name;
+    public string Color;
+    public string Device;
+    public string Status;
+
+    public float IdleTime;
+    public float LastUpdate;
+
+    public PlayerDisplayData(
+        string name,
+        string color,
+        string device,
+        string status)
     {
-        public string Name;
-        public string Color;
-        public string Device;
-        public string Status;
+        Name = name;
+        Color = color;
+        Device = device;
+        Status = status;
 
-        public float LastUpdate;
-        public float IdleTime;
-
-        public PlayerDisplayData(
-            string name,
-            string color,
-            string device,
-            string status)
-        {
-            Name = name;
-            Color = color;
-            Device = device;
-            Status = status;
-
-            LastUpdate =
-                Time.unscaledTime;
-
-            IdleTime = 0f;
-        }
+        IdleTime = 0f;
+        LastUpdate = Time.unscaledTime;
     }
 }
