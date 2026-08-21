@@ -16,81 +16,96 @@ public class JelloMenuUI : MonoBehaviour
 {
     private bool menuOpen = false;
 
+    private Rect window = new Rect(250, 150, 420, 280);
+
     private GUIStyle? titleStyle;
     private GUIStyle? buttonStyle;
     private GUIStyle? labelStyle;
 
-    private Rect window = new Rect(250, 150, 420, 280);
-
-    private string statusText = "QOL Menu Loaded";
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.F4))
-            menuOpen = !menuOpen;
-    }
+    private string statusText = "Jello Loaded";
 
     private void OnGUI()
     {
+        // F4 keybind
+        if (Event.current != null &&
+            Event.current.type == EventType.KeyDown &&
+            Event.current.keyCode == KeyCode.F4)
+        {
+            menuOpen = !menuOpen;
+
+            Debug.Log("[Jello] F4 pressed! Menu = " + menuOpen);
+
+            Event.current.Use();
+        }
+
         if (!menuOpen)
             return;
 
         CreateStyles();
 
+        // Background
         GUI.Box(window, "");
 
+        // Title
         GUI.Label(
-            new Rect(window.x + 20, window.y + 20, 380, 40),
+            new Rect(
+                window.x + 20,
+                window.y + 15,
+                window.width - 40,
+                40
+            ),
             "JELLO",
             titleStyle
         );
 
+        // Status
         GUI.Label(
-            new Rect(window.x + 20, window.y + 60, 380, 25),
+            new Rect(
+                window.x + 20,
+                window.y + 60,
+                window.width - 40,
+                30
+            ),
             statusText,
             labelStyle
         );
 
+        // Test button
         if (GUI.Button(
-            new Rect(window.x + 40, window.y + 105, 340, 40),
-            "Send Hello!",
+            new Rect(
+                window.x + 40,
+                window.y + 105,
+                window.width - 80,
+                40
+            ),
+            "Test Button",
             buttonStyle
         ))
         {
-            SendHello();
+            statusText = "Button works!";
+            Debug.Log("[Jello] Test Button Works!");
         }
 
+        // Close button
         if (GUI.Button(
-            new Rect(window.x + 40, window.y + 160, 340, 40),
-            "Close Menu",
+            new Rect(
+                window.x + 40,
+                window.y + 160,
+                window.width - 80,
+                40
+            ),
+            "Close",
             buttonStyle
         ))
         {
             menuOpen = false;
-        }
-    }
-
-    private void SendHello()
-    {
-        if (PlayerControl.LocalPlayer == null)
-        {
-            statusText = "No local player!";
-            Debug.Log("[Jello] LocalPlayer is null.");
-            return;
+            Debug.Log("[Jello] Menu closed.");
         }
 
-        bool sent = PlayerControl.LocalPlayer.RpcSendChat("Hello!");
-
-        if (sent)
-        {
-            statusText = "Sent: Hello!";
-            Debug.Log("[Jello] Sent Hello!");
-        }
-        else
-        {
-            statusText = "Chat failed.";
-            Debug.Log("[Jello] RpcSendChat returned false.");
-        }
+        // Drag window
+        GUI.DragWindow(
+            new Rect(0, 0, window.width, 55)
+        );
     }
 
     private void CreateStyles()
