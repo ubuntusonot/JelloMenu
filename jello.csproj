@@ -21,6 +21,10 @@
       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/core/BepInEx.Unity.Common.dll</HintPath>
     </Reference>
 
+    <Reference Include="Il2CppInterop.Runtime">
+      <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/core/Il2CppInterop.Runtime.dll</HintPath>
+    </Reference>
+
     <Reference Include="Il2Cppmscorlib">
       <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/Il2Cppmscorlib.dll</HintPath>
     </Reference>
