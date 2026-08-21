@@ -1,4 +1,5 @@
 using BepInEx;
+using BepInEx.Unity.IL2CPP;
 using UnityEngine;
 
 [BepInPlugin("org.vinegar.gfr", "Jello", "1.0.0")]
