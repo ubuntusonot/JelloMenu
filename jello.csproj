@@ -7,4 +7,22 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="BepInEx.Core">
+      <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/core/BepInEx.Core.dll</HintPath>
+    </Reference>
+
+    <Reference Include="BepInEx">
+      <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/core/BepInEx.dll</HintPath>
+    </Reference>
+
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>/home/gfd/Documents/Games/Among Us/BepInEx/interop/UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
