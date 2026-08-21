@@ -21,11 +21,40 @@ public class JelloMenuUI : MonoBehaviour
     private GUIStyle? buttonStyle;
     private GUIStyle? labelStyle;
 
+    private Rect window = new Rect(250, 150, 420, 280);
+
+    private bool dragging;
+    private Vector2 dragOffset;
+
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Delete))
-        {
+        if (Input.GetKeyDown(KeyCode.F4))
             menuOpen = !menuOpen;
+
+        if (!menuOpen)
+            return;
+
+        Vector2 mouse = Event.current != null
+            ? Event.current.mousePosition
+            : Vector2.zero;
+
+        // Start dragging when clicking the title area
+        if (Input.GetMouseButtonDown(0) &&
+            window.Contains(mouse) &&
+            mouse.y >= window.y &&
+            mouse.y <= window.y + 40)
+        {
+            dragging = true;
+            dragOffset = mouse - new Vector2(window.x, window.y);
+        }
+
+        if (Input.GetMouseButtonUp(0))
+            dragging = false;
+
+        if (dragging && Input.GetMouseButton(0))
+        {
+            window.x = mouse.x - dragOffset.x;
+            window.y = mouse.y - dragOffset.y;
         }
     }
 
@@ -36,29 +65,22 @@ public class JelloMenuUI : MonoBehaviour
 
         CreateStyles();
 
-        // Menu background
-        GUI.Box(
-            new Rect(250, 150, 420, 280),
-            ""
-        );
+        GUI.Box(window, "");
 
-        // Title
         GUI.Label(
-            new Rect(270, 175, 380, 40),
+            new Rect(window.x + 20, window.y + 20, 380, 40),
             "JELLO",
             titleStyle
         );
 
-        // Status
         GUI.Label(
-            new Rect(270, 215, 380, 25),
+            new Rect(window.x + 20, window.y + 60, 380, 25),
             "QOL Menu Loaded",
             labelStyle
         );
 
-        // Test button
         if (GUI.Button(
-            new Rect(290, 255, 340, 40),
+            new Rect(window.x + 40, window.y + 105, 340, 40),
             "Test Button",
             buttonStyle
         ))
@@ -66,9 +88,8 @@ public class JelloMenuUI : MonoBehaviour
             Debug.Log("Smart Looking At Logs");
         }
 
-        // Close button
         if (GUI.Button(
-            new Rect(290, 310, 340, 40),
+            new Rect(window.x + 40, window.y + 160, 340, 40),
             "Close Menu",
             buttonStyle
         ))
