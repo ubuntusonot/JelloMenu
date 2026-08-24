@@ -5,7 +5,7 @@ using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using UnityEngine;
 
-[BepInPlugin("org.vinegar.gfr", "Jello", "2.0.0")]
+[BepInPlugin("org.vinegar.gfr", "Jelo", "2.0.0")]
 public sealed class QOLMenuPlugin : BasePlugin
 {
     public override void Load()
